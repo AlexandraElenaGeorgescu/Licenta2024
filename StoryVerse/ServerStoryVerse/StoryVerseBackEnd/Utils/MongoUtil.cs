@@ -38,35 +38,35 @@ namespace StoryVerseBackEnd.Utils
             _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Set("Password", newPass));
         }
 
-        public static List<StoryModel> GetRegisteredstorys(ObjectId userId, int pageSize, int pageId)
+        public static List<StoryModel> GetRegisteredStories(ObjectId userId, int pageSize, int pageId)
         {
             UserModel user = GetUser(userId);
 
-            return _storyColl.Find(e => user.Registeredstorys.Contains(e.Id)).Skip(pageId * pageSize).Limit(pageSize).ToList();
+            return _storyColl.Find(e => user.RegisteredStories.Contains(e.Id)).Skip(pageId * pageSize).Limit(pageSize).ToList();
         }
-        
+
         public static List<ReviewModel> GetUserReviews(ObjectId userId, int pageSize, int pageId)
         {
             return _reviewColl.Find(r => r.UserId == userId).Skip(pageId * pageSize).Limit(pageSize).ToList();
         }
 
-        public static List<StoryModel> GetCreatedstorys(ObjectId userId, int pageSize, int pageId)
+        public static List<StoryModel> GetCreatedStories(ObjectId userId, int pageSize, int pageId)
         {
             List<StoryModel> resp = _storyColl.Find(e => e.CreatorId == userId).SortByDescending(e => e.DateCreated).Skip(pageId * pageSize).Limit(pageSize).ToList();
             return resp;
         }
-        
+
         public static String GetRegistrationStatus(ObjectId storyId, ObjectId userId)
         {
             String status = "server problem";
             UserModel user = GetUser(userId);
             StoryModel ev = Getstory(storyId);
 
-            if(ev.CreatorId == user.Id)
+            if (ev.CreatorId == user.Id)
             {
                 status = "creator";
             }
-            else if(user.Registeredstorys.Contains(ev.Id))
+            else if (user.RegisteredStories.Contains(ev.Id))
             {
                 status = "registered";
             }
@@ -83,18 +83,18 @@ namespace StoryVerseBackEnd.Utils
             String status = GetRegistrationStatus(storyId, userId);
             if (status == "unregistered")
             {
-                _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Push("Registeredstorys", storyId));
+                _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Push("RegisteredStories", storyId));
                 return true;
             }
             return false;
         }
-        
+
         public static Boolean UnregisterUserFromstory(ObjectId storyId, ObjectId userId)
         {
             String status = GetRegistrationStatus(storyId, userId);
             if (status == "registered")
             {
-                _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Pull("Registeredstorys", storyId));
+                _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Pull("RegisteredStories", storyId));
                 return true;
             }
             return false;
@@ -108,8 +108,8 @@ namespace StoryVerseBackEnd.Utils
         {
             return _storyColl.Find(e => e.Id == storyId).FirstOrDefault();
         }
-        
-        public static List<StoryModel> Getstorys(int pageSize, int pageId)
+
+        public static List<StoryModel> GetStories(int pageSize, int pageId)
         {
             return _storyColl.Find(e => true).Skip(pageId * pageSize).Limit(pageSize).ToList();
         }
@@ -139,28 +139,27 @@ namespace StoryVerseBackEnd.Utils
                     {
                         Id = b["_id"].AsObjectId,
                         Name = b["name"].AsString,
-                        StartDate = b["startDate"].ToUniversalTime(),
-                        EndDate = b["endDate"].ToUniversalTime(),
-                        Location = b["location"].AsString,
+                        DateCreated = b["dateCreated"].ToUniversalTime(),
+                        Genre = b["genre"].AsString,
                         Description = b["description"].AsString,
-                        Url = b["url"].AsString,
+                        ActualStory = b["actualStory"].AsString,
                         Image = b["image"].AsString,
                         CreatorId = b["creatorId"].AsObjectId
                     };
                 }));
         }
-        
+
         public static List<long> countRegistrations(ObjectId storyId)
         {
             StoryModel ev = Getstory(storyId);
             ObjectId creatorId = ev.CreatorId;
-            List<ObjectId> otherstorys = _storyColl.Find(e => e.CreatorId == creatorId && e.Id != storyId).Project(e => e.Id).ToList();
+            List<ObjectId> otherStories = _storyColl.Find(e => e.CreatorId == creatorId && e.Id != storyId).Project(e => e.Id).ToList();
             List<UserModel> allUsers = _userColl.Find(u => true).ToList();
-            
-            long subscribedToThisstory = allUsers.Where(u => u.Registeredstorys != null && u.Registeredstorys.Contains(storyId) && !u.Registeredstorys.Intersect(otherstorys).Any()).Count();
-            long subscribedToOthers = allUsers.Where(u => u.Registeredstorys != null && !u.Registeredstorys.Contains(storyId) && u.Registeredstorys.Intersect(otherstorys).Any()).Count();
-            long subscribedBoth = allUsers.Where(u => u.Registeredstorys != null && u.Registeredstorys.Contains(storyId) && u.Registeredstorys.Intersect(otherstorys).Any()).Count();
-            long total = allUsers.Where(u => u.Registeredstorys != null && (u.Registeredstorys.Contains(storyId) || u.Registeredstorys.Intersect(otherstorys).Any())).Count();
+
+            long subscribedToThisstory = allUsers.Where(u => u.RegisteredStories != null && u.RegisteredStories.Contains(storyId) && !u.RegisteredStories.Intersect(otherStories).Any()).Count();
+            long subscribedToOthers = allUsers.Where(u => u.RegisteredStories != null && !u.RegisteredStories.Contains(storyId) && u.RegisteredStories.Intersect(otherStories).Any()).Count();
+            long subscribedBoth = allUsers.Where(u => u.RegisteredStories != null && u.RegisteredStories.Contains(storyId) && u.RegisteredStories.Intersect(otherStories).Any()).Count();
+            long total = allUsers.Where(u => u.RegisteredStories != null && (u.RegisteredStories.Contains(storyId) || u.RegisteredStories.Intersect(otherStories).Any())).Count();
 
             return new List<long> { subscribedToThisstory, subscribedToOthers, subscribedBoth };
         }
@@ -174,7 +173,7 @@ namespace StoryVerseBackEnd.Utils
             DateTime d2 = DateTime.Now;
             List<MessageModel> msgs = _messageColl.Find(m => m.storyId == storyId).ToList();
 
-            for(DateTime d = d1; d.Date < d2.Date; d = d.AddMonths(1))
+            for (DateTime d = d1; d.Date < d2.Date; d = d.AddMonths(1))
             {
                 long x = msgs.Where(m => m.DateSent.Year == d.Year && m.DateSent.Month == d.Month).Count();
                 resp.Add(x);
@@ -212,7 +211,7 @@ namespace StoryVerseBackEnd.Utils
 
         public static void EditReview(ObjectId userId, ObjectId storyId, int rating, String opinion, DateTime lastEdit)
         {
-            if(_reviewColl.Find(r => r.UserId == userId && r.storyId == storyId).CountDocuments() == 0)
+            if (_reviewColl.Find(r => r.UserId == userId && r.storyId == storyId).CountDocuments() == 0)
             {
                 ReviewModel reviewModel = new ReviewModel
                 {
@@ -243,16 +242,16 @@ namespace StoryVerseBackEnd.Utils
         public static List<StoryModel> getRecommendations()
         {
             long totalUsers = _userColl.CountDocuments(u => true);
-            long totalstorys = _storyColl.CountDocuments(e => true);
+            long totalStories = _storyColl.CountDocuments(e => true);
 
             using (StreamWriter file = new StreamWriter("AllReviewsMatrix.txt"))
             {
-               file.WriteLine(totalUsers + " " + totalstorys);
+                file.WriteLine(totalUsers + " " + totalStories);
 
                 for (int i = 0; i < totalUsers; i++)
                 {
                     UserModel user = _userColl.Find(u => true).Skip(i).Limit(1).FirstOrDefault();
-                    for (int j = 0; j < totalstorys; j++)
+                    for (int j = 0; j < totalStories; j++)
                     {
                         StoryModel evnt = _storyColl.Find(u => true).Skip(j).Limit(1).FirstOrDefault();
                         ReviewModel review = GetReview(user.Id, evnt.Id);

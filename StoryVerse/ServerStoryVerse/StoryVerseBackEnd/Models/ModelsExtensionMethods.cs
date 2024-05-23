@@ -19,7 +19,7 @@ namespace StoryVerseBackEnd.Models
                 Birthday = DateTime.ParseExact(userApiModel.Birthday, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
                 Name = userApiModel.Name,
                 Surname = userApiModel.Surname,
-                Registeredstorys = new List<ObjectId>()
+                RegisteredStories = new List<ObjectId>()
             };
 
             return userModel;
@@ -46,12 +46,10 @@ namespace StoryVerseBackEnd.Models
             {
                 Id = new ObjectId(),
                 Name = storyApiModel.Name,
-                StartDate = DateTime.ParseExact(storyApiModel.StartDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-                EndDate = DateTime.ParseExact(storyApiModel.EndDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-                DateCreated = dateCreated,
-                Location = storyApiModel.Location,
+                DateCreated = DateTime.Now,
+                Genre = storyApiModel.Genre,
                 Description = storyApiModel.Description,
-                Url = storyApiModel.Url,
+                ActualStory = storyApiModel.ActualStory,
                 Image = storyApiModel.Image,
                 CreatorId = new ObjectId(CreatorId)
             };
@@ -65,11 +63,10 @@ namespace StoryVerseBackEnd.Models
             {
                 Id = storyModel.Id.ToString(),
                 Name = storyModel.Name,
-                StartDate = String.Format("{0:yyyy-MM-dd HH:mm}", storyModel.StartDate),
-                EndDate = String.Format("{0:yyyy-MM-dd HH:mm}", storyModel.EndDate),
-                Location = storyModel.Location,
+                DateCreated = String.Format("{0:yyyy-MM-dd HH:mm}", storyModel.DateCreated),
+                Genre = storyModel.Genre,
                 Description = storyModel.Description,
-                Url = storyModel.Url,
+                ActualStory = storyModel.ActualStory,
                 Image = storyModel.Image
             };
 

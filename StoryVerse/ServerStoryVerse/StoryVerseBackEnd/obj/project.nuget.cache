@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "MkF7TtlLoXiT3q1eNXHeOftxnA0J5nW7sl7Tl2dRwdO87iERTjS5D9CEp0Ru3ca4YNFYSzsa+jNzX1LXV2aFAA==",
+  "dgSpecHash": "uoJZA9Z+a0SvcCCAOC7wPbxsGTl2wSLJ0IskyjAsl/9/Q6l1tQ51lxkST7HrJ0G1ZSahQh5LPzlrV+kfmNrmaw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\alest\\OneDrive\\Desktop\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\StoryVerseBackEnd.csproj",
+  "projectFilePath": "C:\\Users\\alest\\OneDrive\\Desktop\\Licenta2024\\Licenta2024\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\StoryVerseBackEnd.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\alest\\.nuget\\packages\\dnsclient\\1.0.7\\dnsclient.1.0.7.nupkg.sha512",
     "C:\\Users\\alest\\.nuget\\packages\\microsoft.aspnet.webapi.client\\5.2.6\\microsoft.aspnet.webapi.client.5.2.6.nupkg.sha512",

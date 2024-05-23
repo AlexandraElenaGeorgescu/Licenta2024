@@ -101,38 +101,38 @@ namespace StoryVerseBackEnd.Controllers
 
         #endregion
 
-        #region User storys Info
+        #region User Stories Info
 
-        [HttpGet("registered-storys/{pageSize}/{pageId}"), Authorize]
+        [HttpGet("registered-stories/{pageSize}/{pageId}"), Authorize]
         public IActionResult Registered([FromRoute] int pageSize, [FromRoute] int pageId, [FromHeader(Name = "Authorization")] string token)
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
-            return Ok(MongoUtil.GetRegisteredstorys(userId, pageSize, pageId)
+            return Ok(MongoUtil.GetRegisteredStories(userId, pageSize, pageId)
                 .ConvertAll(new Converter<StoryModel, StoryApiModel>(e => {
                     return e.getstoryApiModel();
                 })));
         }
 
-        [HttpGet("reviewed-storys/{pageSize}/{pageId}"), Authorize]
+        [HttpGet("reviewed-stories/{pageSize}/{pageId}"), Authorize]
         public IActionResult Reviewed([FromRoute] int pageSize, [FromRoute] int pageId, [FromHeader(Name = "Authorization")] string token)
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
             List<ReviewModel> reviews = MongoUtil.GetUserReviews(userId, pageSize, pageId);
-            List<StoryApiModel> storys = new List<StoryApiModel>();
+            List<StoryApiModel> Stories = new List<StoryApiModel>();
 
             foreach (ReviewModel review in reviews)
             {
-                storys.Add(MongoUtil.Getstory(review.storyId).getstoryApiModel());
+                Stories.Add(MongoUtil.Getstory(review.storyId).getstoryApiModel());
             }
 
-            return Ok(storys);
+            return Ok(Stories);
         }
 
-        [HttpGet("created-storys/{pageSize}/{pageId}"), Authorize]
+        [HttpGet("created-stories/{pageSize}/{pageId}"), Authorize]
         public IActionResult Created([FromRoute] int pageSize, [FromRoute] int pageId, [FromHeader(Name = "Authorization")] string token)
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
-            return Ok(MongoUtil.GetCreatedstorys(userId, pageSize, pageId)
+            return Ok(MongoUtil.GetCreatedStories(userId, pageSize, pageId)
                 .ConvertAll(new Converter<StoryModel, StoryApiModel>(e => {
                     return e.getstoryApiModel();
                 })));

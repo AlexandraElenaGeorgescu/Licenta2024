@@ -14776,11 +14776,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\alest\\OneDrive\\Desktop\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\StoryVerseBackEnd.csproj",
+      "projectUniqueName": "C:\\Users\\alest\\OneDrive\\Desktop\\Licenta2024\\Licenta2024\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\StoryVerseBackEnd.csproj",
       "projectName": "StoryVerseBackEnd",
-      "projectPath": "C:\\Users\\alest\\OneDrive\\Desktop\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\StoryVerseBackEnd.csproj",
+      "projectPath": "C:\\Users\\alest\\OneDrive\\Desktop\\Licenta2024\\Licenta2024\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\StoryVerseBackEnd.csproj",
       "packagesPath": "C:\\Users\\alest\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\alest\\OneDrive\\Desktop\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\obj\\",
+      "outputPath": "C:\\Users\\alest\\OneDrive\\Desktop\\Licenta2024\\Licenta2024\\StoryVerse\\ServerStoryVerse\\StoryVerseBackEnd\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",

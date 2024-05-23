@@ -70,7 +70,7 @@ namespace StoryVerseBackEnd.Controllers
                 cmd.WaitForExit();
             }
 
-            List<StoryApiModel> apistorys = new List<StoryApiModel>();
+            List<StoryApiModel> apiStories = new List<StoryApiModel>();
 
             if (System.IO.File.Exists(filename))
             {
@@ -86,12 +86,12 @@ namespace StoryVerseBackEnd.Controllers
                         string storyIdStr = values[0];
                         ObjectId storyId = new ObjectId(storyIdStr);
                         StoryModel em = MongoUtil.Getstory(storyId);
-                        apistorys.Add(em.getstoryApiModel());
+                        apiStories.Add(em.getstoryApiModel());
                     }
                 }
             }
 
-            return Ok(apistorys);
+            return Ok(apiStories);
         }
 
         [HttpPost("create"), Authorize]
@@ -125,7 +125,7 @@ namespace StoryVerseBackEnd.Controllers
                         file.CopyTo(stream);
                     }
 
-                    List<StoryModel> storyList = MongoUtil.GetCreatedstorys(new ObjectId(userId), 1, 0);
+                    List<StoryModel> storyList = MongoUtil.GetCreatedStories(new ObjectId(userId), 1, 0);
                     if (storyList.Count > 0 && storyList[0].Image == "StaticFiles/Images/standard.jpg")
                     {
                         string newImage = "StaticFiles/Images/" + fileName;
@@ -156,7 +156,7 @@ namespace StoryVerseBackEnd.Controllers
         [HttpGet("browse/{pageSize}/{pageId}")]
         public IActionResult Browse([FromRoute] int pageSize, [FromRoute] int pageId)
         {
-            return Ok(MongoUtil.Getstorys(pageSize, pageId)
+            return Ok(MongoUtil.GetStories(pageSize, pageId)
                 .ConvertAll(new Converter<StoryModel, StoryApiModel>(storyModel => {
                     return storyModel.getstoryApiModel();
                 })));

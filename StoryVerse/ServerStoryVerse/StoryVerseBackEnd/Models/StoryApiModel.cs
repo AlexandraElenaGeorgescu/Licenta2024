@@ -7,13 +7,12 @@ namespace StoryVerseBackEnd.Models
 {
     public class StoryApiModel
     {
-        public String Id { get; set; }
-        public String Name { get; set; }
-        public String StartDate { get; set; }
-        public String EndDate { get; set; }
-        public String Location { get; set; }
-        public String Description { get; set; }
-        public String Url { get; set; }
-        public String Image { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string DateCreated { get; set; }
+        public string Genre { get; set; }
+        public string Description { get; set; }
+        public string ActualStory { get; set; }
+        public string Image { get; set; }
     }
 }

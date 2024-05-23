@@ -11,22 +11,25 @@ namespace StoryVerseBackEnd.Models
     {
         [BsonId]
         public ObjectId Id { get; set; }
+
         [BsonElement("name")]
-        public String Name { get; set; }
-        [BsonElement("startDate")]
-        public DateTime StartDate { get; set; }
-        [BsonElement("endDate")]
-        public DateTime EndDate { get; set; }
+        public string Name { get; set; }
+
         [BsonElement("dateCreated")]
         public DateTime DateCreated { get; set; }
-        [BsonElement("location")]
-        public String Location { get; set; }
+
+        [BsonElement("genre")]
+        public string Genre { get; set; }
+
         [BsonElement("description")]
-        public String Description { get; set; }
-        [BsonElement("url")]
-        public String Url { get; set; }
+        public string Description { get; set; }
+
+        [BsonElement("actualStory")]
+        public string ActualStory { get; set; }
+
         [BsonElement("image")]
-        public String Image { get; set; }
+        public string Image { get; set; }
+
         [BsonElement("creatorId")]
         public ObjectId CreatorId { get; set; }
     }
