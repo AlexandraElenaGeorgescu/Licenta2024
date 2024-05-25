@@ -78,7 +78,7 @@ namespace StoryVerseBackEnd.Utils
             return status;
         }
 
-        public static Boolean RegisterUserTostory(ObjectId storyId, ObjectId userId)
+        public static Boolean RegisterUserToStory(ObjectId storyId, ObjectId userId)
         {
             String status = GetRegistrationStatus(storyId, userId);
             if (status == "unregistered")
@@ -89,7 +89,7 @@ namespace StoryVerseBackEnd.Utils
             return false;
         }
 
-        public static Boolean UnregisterUserFromstory(ObjectId storyId, ObjectId userId)
+        public static Boolean UnregisterUserFromStory(ObjectId storyId, ObjectId userId)
         {
             String status = GetRegistrationStatus(storyId, userId);
             if (status == "registered")

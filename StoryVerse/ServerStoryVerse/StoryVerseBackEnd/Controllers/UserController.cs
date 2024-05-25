@@ -151,18 +151,18 @@ namespace StoryVerseBackEnd.Controllers
         }
 
         [HttpPatch("register/{storyId}"), Authorize]
-        public IActionResult RegisterUserTostory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
+        public IActionResult RegisterUserToStory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
-            Boolean ok = MongoUtil.RegisterUserTostory(new ObjectId(storyId), userId);
+            Boolean ok = MongoUtil.RegisterUserToStory(new ObjectId(storyId), userId);
             return Ok(ok);
         }
 
         [HttpPatch("unregister/{storyId}"), Authorize]
-        public IActionResult UnregisterUserTostory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
+        public IActionResult UnregisterUserToStory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
-            Boolean ok = MongoUtil.UnregisterUserFromstory(new ObjectId(storyId), userId);
+            Boolean ok = MongoUtil.UnregisterUserFromStory(new ObjectId(storyId), userId);
             MongoUtil.DeleteReview(userId, new ObjectId(storyId));
             return Ok(ok);
         }
