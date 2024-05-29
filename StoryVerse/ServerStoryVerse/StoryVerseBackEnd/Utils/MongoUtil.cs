@@ -155,12 +155,12 @@ namespace StoryVerseBackEnd.Utils
             List<ObjectId> otherStories = _storyColl.Find(e => e.CreatorId == creatorId && e.Id != storyId).Project(e => e.Id).ToList();
             List<UserModel> allUsers = _userColl.Find(u => true).ToList();
 
-            long subscribedToThisstory = allUsers.Where(u => u.RegisteredStories != null && u.RegisteredStories.Contains(storyId) && !u.RegisteredStories.Intersect(otherStories).Any()).Count();
+            long subscribedToThisStory = allUsers.Where(u => u.RegisteredStories != null && u.RegisteredStories.Contains(storyId) && !u.RegisteredStories.Intersect(otherStories).Any()).Count();
             long subscribedToOthers = allUsers.Where(u => u.RegisteredStories != null && !u.RegisteredStories.Contains(storyId) && u.RegisteredStories.Intersect(otherStories).Any()).Count();
             long subscribedBoth = allUsers.Where(u => u.RegisteredStories != null && u.RegisteredStories.Contains(storyId) && u.RegisteredStories.Intersect(otherStories).Any()).Count();
             long total = allUsers.Where(u => u.RegisteredStories != null && (u.RegisteredStories.Contains(storyId) || u.RegisteredStories.Intersect(otherStories).Any())).Count();
 
-            return new List<long> { subscribedToThisstory, subscribedToOthers, subscribedBoth };
+            return new List<long> { subscribedToThisStory, subscribedToOthers, subscribedBoth };
         }
 
         public static Tuple<List<long>, List<string>> countMsgs(ObjectId storyId)
@@ -187,12 +187,13 @@ namespace StoryVerseBackEnd.Utils
 
         public static Tuple<long, float> getReviewsStats(ObjectId storyId)
         {
-            return new Tuple<long, float>
-            (
-                _reviewColl.CountDocuments(r => r.StoryId == storyId),
-                _reviewColl.AsQueryable().Where(r => r.StoryId == storyId).ToList().Average(r => r.Rating)
-            );
+            var reviews = _reviewColl.AsQueryable().Where(r => r.StoryId == storyId).ToList();
+            long reviewCount = reviews.Count;
+            float averageRating = reviewCount > 0 ? reviews.Average(r => r.Rating) : 0;
+
+            return new Tuple<long, float>(reviewCount, averageRating);
         }
+
 
         #endregion
 
