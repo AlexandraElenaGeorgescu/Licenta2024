@@ -28,14 +28,15 @@ namespace StoryVerseBackEnd
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly ILogger<Startup> _logger;
+        public Startup(IConfiguration configuration, ILogger<Startup> logger)
         {
             Configuration = configuration;
+            _logger = logger;
         }
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors();
@@ -47,7 +48,8 @@ namespace StoryVerseBackEnd
             });
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
-                options.TokenValidationParameters = new TokenValidationParameters {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
                     ValidateIssuer = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
@@ -57,13 +59,13 @@ namespace StoryVerseBackEnd
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtKey")))
                 };
             });
+
             JwtUtil.setSecurityKey(Environment.GetEnvironmentVariable("JwtKey"));
 
             MongoUtil.InitializeConnection(Environment.GetEnvironmentVariable("MongoDBConnectionString"),
                                             Environment.GetEnvironmentVariable("MongoDBDatabaseName"));
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -76,9 +78,9 @@ namespace StoryVerseBackEnd
             }
 
             app.UseCors(builder => builder.AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowAnyOrigin()
-            .AllowCredentials());
+                .AllowAnyMethod()
+                .AllowAnyOrigin()
+                .AllowCredentials());
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
@@ -112,7 +114,7 @@ namespace StoryVerseBackEnd
                 }
             });
 
-            //app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseStaticFiles();
             app.UseStaticFiles(new StaticFileOptions()
@@ -124,53 +126,58 @@ namespace StoryVerseBackEnd
         }
 
         private ConcurrentDictionary<string, ConcurrentBag<WebSocket>> chatRooms = new ConcurrentDictionary<string, ConcurrentBag<WebSocket>>();
+
         private async Task PingRequest(HttpContext context, WebSocket socket)
         {
             var buffer = new byte[600 * 1024];
             WebSocketReceiveResult result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-            
+
             string received = Encoding.Default.GetString(buffer, 0, result.Count);
             string[] splits = received.Split(' ');
+
+            if (splits.Length < 2)
+            {
+                _logger.LogError("Invalid WebSocket message received.");
+                await socket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Invalid message format", CancellationToken.None);
+                return;
+            }
+
             string storyIdStr = splits[0];
             ObjectId storyId = new ObjectId(storyIdStr);
-            
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken("Bearer " + splits[1]));
             string userName = MongoUtil.GetUser(userId).Name;
 
             if (chatRooms.ContainsKey(storyIdStr))
                 chatRooms[storyIdStr].Add(socket);
             else
-                chatRooms.AddOrUpdate(storyIdStr, new ConcurrentBag<WebSocket> { socket },(string x, ConcurrentBag<WebSocket> y) => { return null; });
-            
+                chatRooms.TryAdd(storyIdStr, new ConcurrentBag<WebSocket> { socket });
+
             while (!result.CloseStatus.HasValue)
             {
                 result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 received = Encoding.Default.GetString(buffer, 0, result.Count);
 
-                if (received == "")
+                if (string.IsNullOrEmpty(received))
                     continue;
 
-                MessageModel msg = new MessageModel
+                var msg = new MessageModel
                 {
                     Message = received,
                     UserId = userId,
-                    storyId = storyId,
+                    StoryId = storyId,
                     DateSent = DateTime.Now
                 };
 
                 MongoUtil.SaveMessage(msg);
-                MessageApiModel msgApi = msg.getMessageApiModel(userName);
-                string toSend = msgApi.Message + "!#|||#!" + msgApi.DateSent + "!#|||#!" + msgApi.userName;
-                Encoding.ASCII.GetBytes(toSend, 0, toSend.Length, buffer, 0);
+                var msgApi = msg.getMessageApiModel(userName);
+                string toSend = msgApi.Message + "!#|||#!" + msgApi.DateSent + "!#|||#!" + msgApi.UserName;
+                byte[] sendBuffer = Encoding.ASCII.GetBytes(toSend);
 
                 foreach (WebSocket ws in chatRooms[storyIdStr])
                 {
-                    if (ws != socket)
+                    if (ws != socket && ws.State == WebSocketState.Open)
                     {
-                        if (ws.State == WebSocketState.Open)
-                        {
-                            ws.SendAsync(new ArraySegment<byte>(buffer, 0, toSend.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
-                        }
+                        await ws.SendAsync(new ArraySegment<byte>(sendBuffer, 0, toSend.Length), result.MessageType, result.EndOfMessage, CancellationToken.None);
                     }
                 }
             }

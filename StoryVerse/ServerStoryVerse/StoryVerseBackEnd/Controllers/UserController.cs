@@ -122,7 +122,7 @@ namespace StoryVerseBackEnd.Controllers
 
             foreach (ReviewModel review in reviews)
             {
-                Stories.Add(MongoUtil.Getstory(review.storyId).getstoryApiModel());
+                Stories.Add(MongoUtil.GetStory(review.StoryId).getstoryApiModel());
             }
 
             return Ok(Stories);

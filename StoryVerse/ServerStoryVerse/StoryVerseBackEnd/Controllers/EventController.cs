@@ -23,7 +23,7 @@ namespace StoryVerseBackEnd.Controllers
         public IActionResult GetPieChartData([FromHeader(Name = "Authorization")] string token, [FromRoute] string storyId)
         {
             string userId = JwtUtil.GetUserIdFromToken(token);
-            StoryModel ev = MongoUtil.Getstory(new ObjectId(storyId));
+            StoryModel ev = MongoUtil.GetStory(new ObjectId(storyId));
 
             if (ev.CreatorId == new ObjectId(userId))
                 return Ok(MongoUtil.countRegistrations(new ObjectId(storyId)));
@@ -35,7 +35,7 @@ namespace StoryVerseBackEnd.Controllers
         public IActionResult GetLineChartData([FromHeader(Name = "Authorization")] string token, [FromRoute] string storyId)
         {
             string userId = JwtUtil.GetUserIdFromToken(token);
-            StoryModel ev = MongoUtil.Getstory(new ObjectId(storyId));
+            StoryModel ev = MongoUtil.GetStory(new ObjectId(storyId));
 
             if (ev.CreatorId == new ObjectId(userId))
                 return Ok(MongoUtil.countMsgs(new ObjectId(storyId)));
@@ -47,7 +47,7 @@ namespace StoryVerseBackEnd.Controllers
         public IActionResult GetReviewsStats([FromHeader(Name = "Authorization")] string token, [FromRoute] string storyId)
         {
             string userId = JwtUtil.GetUserIdFromToken(token);
-            StoryModel ev = MongoUtil.Getstory(new ObjectId(storyId));
+            StoryModel ev = MongoUtil.GetStory(new ObjectId(storyId));
 
             if(ev.CreatorId == new ObjectId(userId))
                 return Ok(MongoUtil.getReviewsStats(new ObjectId(storyId)));
@@ -85,7 +85,7 @@ namespace StoryVerseBackEnd.Controllers
                         string[] values = line.Split(',');
                         string storyIdStr = values[0];
                         ObjectId storyId = new ObjectId(storyIdStr);
-                        StoryModel em = MongoUtil.Getstory(storyId);
+                        StoryModel em = MongoUtil.GetStory(storyId);
                         apiStories.Add(em.getstoryApiModel());
                     }
                 }
@@ -100,12 +100,12 @@ namespace StoryVerseBackEnd.Controllers
             String userId = JwtUtil.GetUserIdFromToken(token);
             StoryModel storyModel = storyApiModel.getStoryModel(userId, DateTime.Now);
             storyModel.Image = "StaticFiles/Images/standard.jpg";
-            MongoUtil.Addstory(storyModel);
+            MongoUtil.AddStory(storyModel);
 
             return Ok("Story created");
         }
 
-        [HttpPost("upload-image"), DisableRequestSizeLimit, Authorize]
+        [HttpPost("upload-image/{storyId}"), DisableRequestSizeLimit, Authorize]
         public IActionResult Upload([FromHeader(Name = "Authorization")] string token)
         {
             try
@@ -132,7 +132,6 @@ namespace StoryVerseBackEnd.Controllers
                         MongoUtil.UpdateImage(storyList[0].Id, newImage);
                     }
 
-
                     return Ok("Image updated");
                 }
                 else
@@ -149,7 +148,7 @@ namespace StoryVerseBackEnd.Controllers
         [HttpGet("details/{storyId}")]
         public IActionResult Details([FromRoute] string storyId)
         {
-            StoryModel storyModel = MongoUtil.Getstory(new ObjectId(storyId));
+            StoryModel storyModel = MongoUtil.GetStory(new ObjectId(storyId));
             return Ok(storyModel.getstoryApiModel());
         }
 

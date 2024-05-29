@@ -9,6 +9,6 @@ namespace StoryVerseBackEnd.Models
     {
         public string Message { get; set; }
         public string DateSent { get; set; }
-        public string userName { get; set; }
+        public string UserName { get; set; }
     }
 }

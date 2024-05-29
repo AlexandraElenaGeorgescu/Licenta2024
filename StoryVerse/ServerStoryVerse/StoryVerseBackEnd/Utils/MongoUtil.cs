@@ -60,7 +60,7 @@ namespace StoryVerseBackEnd.Utils
         {
             String status = "server problem";
             UserModel user = GetUser(userId);
-            StoryModel ev = Getstory(storyId);
+            StoryModel ev = GetStory(storyId);
 
             if (ev.CreatorId == user.Id)
             {
@@ -104,7 +104,7 @@ namespace StoryVerseBackEnd.Utils
 
         #region Story Util
 
-        public static StoryModel Getstory(ObjectId storyId)
+        public static StoryModel GetStory(ObjectId storyId)
         {
             return _storyColl.Find(e => e.Id == storyId).FirstOrDefault();
         }
@@ -114,7 +114,7 @@ namespace StoryVerseBackEnd.Utils
             return _storyColl.Find(e => true).Skip(pageId * pageSize).Limit(pageSize).ToList();
         }
 
-        public static void Addstory(StoryModel storyModel)
+        public static void AddStory(StoryModel storyModel)
         {
             _storyColl.InsertOne(storyModel);
         }
@@ -126,32 +126,31 @@ namespace StoryVerseBackEnd.Utils
             _storyColl.UpdateOne(filter, update);
         }
 
-        public static List<StoryModel> Search(int pageSize, int pageId, String searchText)
+        public static List<StoryModel> Search(int pageSize, int pageId, string searchText)
         {
-            FilterDefinition<StoryModel> filter = Builders<StoryModel>.Filter.Text(searchText);
-            ProjectionDefinition<StoryModel> projection = Builders<StoryModel>.Projection.MetaTextScore("TextMatchScore");
-            SortDefinition<StoryModel> sort = Builders<StoryModel>.Sort.MetaTextScore("TextMatchScore");
+            var filter = Builders<StoryModel>.Filter.Text(searchText);
+            var projection = Builders<StoryModel>.Projection.MetaTextScore("TextMatchScore");
+            var sort = Builders<StoryModel>.Sort.MetaTextScore("TextMatchScore");
 
-            return _storyColl.Find(filter).Project(projection).Sort(sort).Skip(pageId * pageSize).Limit(pageSize)
-                .ToList().ConvertAll(new Converter<BsonDocument, StoryModel>(b => {
-                    b.Remove("TextMatchScore");
-                    return new StoryModel
-                    {
-                        Id = b["_id"].AsObjectId,
-                        Name = b["name"].AsString,
-                        DateCreated = b["dateCreated"].ToUniversalTime(),
-                        Genre = b["genre"].AsString,
-                        Description = b["description"].AsString,
-                        ActualStory = b["actualStory"].AsString,
-                        Image = b["image"].AsString,
-                        CreatorId = b["creatorId"].AsObjectId
-                    };
-                }));
+            var results = _storyColl.Find(filter)
+                                    .Project<StoryModel>(projection)
+                                    .Sort(sort)
+                                    .Skip(pageId * pageSize)
+                                    .Limit(pageSize)
+                                    .ToList();
+
+            results.ForEach(story =>
+            {
+                story.TextMatchScore = null; // Assuming StoryModel has a property for TextMatchScore, otherwise skip this line
+            });
+
+            return results;
         }
+
 
         public static List<long> countRegistrations(ObjectId storyId)
         {
-            StoryModel ev = Getstory(storyId);
+            StoryModel ev = GetStory(storyId);
             ObjectId creatorId = ev.CreatorId;
             List<ObjectId> otherStories = _storyColl.Find(e => e.CreatorId == creatorId && e.Id != storyId).Project(e => e.Id).ToList();
             List<UserModel> allUsers = _userColl.Find(u => true).ToList();
@@ -168,10 +167,10 @@ namespace StoryVerseBackEnd.Utils
         {
             List<long> resp = new List<long>();
             List<string> labels = new List<string>();
-            StoryModel ev = Getstory(storyId);
+            StoryModel ev = GetStory(storyId);
             DateTime d1 = ev.DateCreated.AddDays(-ev.DateCreated.Day + 1);
             DateTime d2 = DateTime.Now;
-            List<MessageModel> msgs = _messageColl.Find(m => m.storyId == storyId).ToList();
+            List<MessageModel> msgs = _messageColl.Find(m => m.StoryId == storyId).ToList();
 
             for (DateTime d = d1; d.Date < d2.Date; d = d.AddMonths(1))
             {
@@ -190,8 +189,8 @@ namespace StoryVerseBackEnd.Utils
         {
             return new Tuple<long, float>
             (
-                _reviewColl.CountDocuments(r => r.storyId == storyId),
-                _reviewColl.AsQueryable().Where(r => r.storyId == storyId).ToList().Average(r => r.Rating)
+                _reviewColl.CountDocuments(r => r.StoryId == storyId),
+                _reviewColl.AsQueryable().Where(r => r.StoryId == storyId).ToList().Average(r => r.Rating)
             );
         }
 
@@ -201,17 +200,17 @@ namespace StoryVerseBackEnd.Utils
 
         public static List<ReviewModel> GetReviews(ObjectId storyId, int pageSize, int pageId)
         {
-            return _reviewColl.Find(r => r.storyId == storyId).Sort(Builders<ReviewModel>.Sort.Descending(r => r.LastEdit)).Skip(pageId * pageSize).Limit(pageSize).ToList();
+            return _reviewColl.Find(r => r.StoryId == storyId).Sort(Builders<ReviewModel>.Sort.Descending(r => r.LastEdit)).Skip(pageId * pageSize).Limit(pageSize).ToList();
         }
 
         public static ReviewModel GetReview(ObjectId userId, ObjectId storyId)
         {
-            return _reviewColl.Find(r => r.UserId == userId && r.storyId == storyId).FirstOrDefault();
+            return _reviewColl.Find(r => r.UserId == userId && r.StoryId == storyId).FirstOrDefault();
         }
 
         public static void EditReview(ObjectId userId, ObjectId storyId, int rating, String opinion, DateTime lastEdit)
         {
-            if (_reviewColl.Find(r => r.UserId == userId && r.storyId == storyId).CountDocuments() == 0)
+            if (_reviewColl.Find(r => r.UserId == userId && r.StoryId == storyId).CountDocuments() == 0)
             {
                 ReviewModel reviewModel = new ReviewModel
                 {
@@ -220,14 +219,14 @@ namespace StoryVerseBackEnd.Utils
                     Opinion = opinion,
                     LastEdit = lastEdit,
                     UserId = userId,
-                    storyId = storyId
+                    StoryId = storyId
                 };
 
                 _reviewColl.InsertOne(reviewModel);
             }
             else
             {
-                _reviewColl.UpdateOne(r => r.UserId == userId && r.storyId == storyId,
+                _reviewColl.UpdateOne(r => r.UserId == userId && r.StoryId == storyId,
                                     Builders<ReviewModel>.Update.Set(r => r.Rating, rating)
                                                                 .Set(r => r.Opinion, opinion)
                                                                 .Set(r => r.LastEdit, lastEdit));
@@ -236,7 +235,7 @@ namespace StoryVerseBackEnd.Utils
 
         public static void DeleteReview(ObjectId userId, ObjectId storyId)
         {
-            _reviewColl.DeleteOne(r => r.UserId == userId && r.storyId == storyId);
+            _reviewColl.DeleteOne(r => r.UserId == userId && r.StoryId == storyId);
         }
 
         public static List<StoryModel> getRecommendations()
@@ -276,7 +275,7 @@ namespace StoryVerseBackEnd.Utils
         #region ChatRoom Util
         public static List<MessageModel> GetMessages(ObjectId storyId)
         {
-            return _messageColl.Find(m => m.storyId == storyId).SortBy(m => m.DateSent).ToList();
+            return _messageColl.Find(m => m.StoryId == storyId).SortBy(m => m.DateSent).ToList();
         }
 
         public static void SaveMessage(MessageModel messageModel)
@@ -285,7 +284,7 @@ namespace StoryVerseBackEnd.Utils
         }
         #endregion
 
-        public static void InitializeConnection(String connectionString, String databaseName)
+        public static void InitializeConnection(string connectionString, string databaseName)
         {
             _conn = new MongoClient(connectionString);
             _db = _conn.GetDatabase(databaseName);
@@ -293,7 +292,16 @@ namespace StoryVerseBackEnd.Utils
             _storyColl = _db.GetCollection<StoryModel>("story");
             _reviewColl = _db.GetCollection<ReviewModel>("review");
             _messageColl = _db.GetCollection<MessageModel>("message");
+
+            var indexKeysDefinition = Builders<StoryModel>.IndexKeys
+                .Text(story => story.Name)
+                .Text(story => story.Description)
+                .Text(story => story.ActualStory);
+
+            var indexModel = new CreateIndexModel<StoryModel>(indexKeysDefinition);
+            _storyColl.Indexes.CreateOne(indexModel);
         }
+
 
         private static MongoClient _conn;
         private static IMongoDatabase _db;

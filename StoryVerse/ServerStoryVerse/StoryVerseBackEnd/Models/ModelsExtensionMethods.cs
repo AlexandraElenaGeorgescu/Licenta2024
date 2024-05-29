@@ -82,7 +82,7 @@ namespace StoryVerseBackEnd.Models
                 Opinion = reviewApiModel.Opinion,
                 LastEdit = DateTime.ParseExact(reviewApiModel.LastEdit, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
                 UserId = new ObjectId(UserId),
-                storyId = new ObjectId(storyId)
+                StoryId = new ObjectId(storyId)
             };
 
             return reviewModel;
@@ -107,7 +107,7 @@ namespace StoryVerseBackEnd.Models
             {
                 Message = messageModel.Message,
                 DateSent = String.Format("{0:yyyy-MM-dd HH:mm}", messageModel.DateSent),
-                userName = userName
+                UserName = userName
             };
 
             return messagesApiModel;

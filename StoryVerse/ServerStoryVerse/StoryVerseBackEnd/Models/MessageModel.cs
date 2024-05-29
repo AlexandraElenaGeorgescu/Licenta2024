@@ -18,6 +18,6 @@ namespace StoryVerseBackEnd.Models
         [BsonElement("userId")]
         public ObjectId UserId { get; set; }
         [BsonElement("storyId")]
-        public ObjectId storyId { get; set; }
+        public ObjectId StoryId { get; set; }
     }
 }
