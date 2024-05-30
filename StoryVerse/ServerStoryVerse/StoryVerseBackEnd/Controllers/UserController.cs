@@ -24,18 +24,6 @@ namespace StoryVerseBackEnd.Controllers
 
         #region User Entity
 
-        [HttpPost("signup")]
-        public IActionResult Signup([FromBody] UserApiModel userApiModel)
-        {
-            if (MongoUtil.GetUser(userApiModel.getUserModel(ModelsExtensionMethods.zeroId).Email) == null)
-            {
-                MongoUtil.AddUser(userApiModel.getUserModel(ModelsExtensionMethods.zeroId));
-                return Ok("Success");
-            }
-
-            return Conflict("Email used");
-        }
-
         [HttpPost("signin")]
         public IActionResult Signin([FromBody] UserApiModel userApiModel)
         {
