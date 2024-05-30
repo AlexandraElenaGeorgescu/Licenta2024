@@ -76,18 +76,19 @@ namespace StoryVerseBackEnd.Controllers
 
                 using (var message = new MailMessage(new MailAddress(Environment.GetEnvironmentVariable("SmtpUserName"), "StoryVerse"), new MailAddress(user.Email))
                 {
-                    Subject = "Parolă cont",
-                    Body = "Salut, " + user.Surname + " " + user.Name + ",\n\n" + Environment.NewLine + Environment.NewLine + "Parola contului tău este " + user.Password + Environment.NewLine + Environment.NewLine + "Nu răspunde acestei adrese de email. Este folosită doar pentru mesaje automate!"
+                    Subject = "Account Password",
+                    Body = "Hello, " + user.Surname + " " + user.Name + ",\n\n" + Environment.NewLine + Environment.NewLine + "Your account password is " + user.Password + Environment.NewLine + Environment.NewLine + "Do not reply to this email address. It is used only for automated messages!"
                 })
                 {
                     smtpClient.Send(message);
                 }
 
-                return Ok("Parola a fost trimisă pe email");
+                return Ok("The password has been sent to your email");
             }
 
-            return Ok("Adresa de email introdusă nu se regăsește în baza de date!");
+            return Ok("The entered email address is not found in the database!");
         }
+
 
         [HttpPatch("change-password"), Authorize]
         public IActionResult ChangePassword([FromBody] UserApiModel newPass, [FromHeader(Name = "Authorization")] string token)

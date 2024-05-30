@@ -35,5 +35,6 @@ namespace StoryVerseBackEnd.Models
 
         [BsonIgnoreIfNull]
         public double? TextMatchScore { get; set; }
+        public string Author { get; set; }
     }
 }

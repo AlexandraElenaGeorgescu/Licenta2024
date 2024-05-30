@@ -111,8 +111,23 @@ namespace StoryVerseBackEnd.Utils
 
         public static List<StoryModel> GetStories(int pageSize, int pageId)
         {
-            return _storyColl.Find(e => true).Skip(pageId * pageSize).Limit(pageSize).ToList();
+            return _storyColl.Find(e => true)
+                             .Skip(pageId * pageSize)
+                             .Limit(pageSize)
+                             .Project(story => new StoryModel
+                             {
+                                 Id = story.Id,
+                                 Name = story.Name,
+                                 DateCreated = story.DateCreated,
+                                 Genre = story.Genre,
+                                 Description = story.Description,
+                                 ActualStory = story.ActualStory,
+                                 Image = story.Image,
+                                 Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname
+                             })
+                             .ToList();
         }
+
 
         public static void AddStory(StoryModel storyModel)
         {

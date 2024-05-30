@@ -67,7 +67,8 @@ namespace StoryVerseBackEnd.Models
                 Genre = storyModel.Genre,
                 Description = storyModel.Description,
                 ActualStory = storyModel.ActualStory,
-                Image = storyModel.Image
+                Image = storyModel.Image,
+                Author = storyModel.Author
             };
 
             return storyApiModel;
