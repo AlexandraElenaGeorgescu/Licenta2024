@@ -114,9 +114,9 @@ namespace StoryVerseBackEnd.Controllers
         }
 
         [HttpGet("browse/{pageSize}/{pageId}")]
-        public IActionResult Browse([FromRoute] int pageSize, [FromRoute] int pageId)
+        public IActionResult Browse([FromRoute] int pageSize, [FromRoute] int pageId, [FromQuery] string genre = "")
         {
-            return Ok(MongoUtil.GetStories(pageSize, pageId)
+            return Ok(MongoUtil.GetStories(pageSize, pageId, genre)
                 .ConvertAll(new Converter<StoryModel, StoryApiModel>(storyModel => {
                     return storyModel.getstoryApiModel();
                 })));

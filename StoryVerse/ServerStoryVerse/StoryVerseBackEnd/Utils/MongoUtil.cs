@@ -42,7 +42,12 @@ namespace StoryVerseBackEnd.Utils
         {
             UserModel user = GetUser(userId);
 
-            return _storyColl.Find(e => user.RegisteredStories.Contains(e.Id)).Skip(pageId * pageSize).Limit(pageSize).ToList();
+            var registeredStoryIds = user?.RegisteredStories ?? new List<ObjectId>();
+
+            return _storyColl.Find(e => registeredStoryIds.Contains(e.Id))
+                             .Skip(pageId * pageSize)
+                             .Limit(pageSize)
+                             .ToList();
         }
 
         public static List<ReviewModel> GetUserReviews(ObjectId userId, int pageSize, int pageId)
@@ -109,9 +114,11 @@ namespace StoryVerseBackEnd.Utils
             return _storyColl.Find(e => e.Id == storyId).FirstOrDefault();
         }
 
-        public static List<StoryModel> GetStories(int pageSize, int pageId)
+        public static List<StoryModel> GetStories(int pageSize, int pageId, string genre = "")
         {
-            return _storyColl.Find(e => true)
+            var filter = string.IsNullOrEmpty(genre) ? Builders<StoryModel>.Filter.Empty : Builders<StoryModel>.Filter.Eq(s => s.Genre, genre);
+
+            return _storyColl.Find(filter)
                              .Skip(pageId * pageSize)
                              .Limit(pageSize)
                              .Project(story => new StoryModel
@@ -127,7 +134,6 @@ namespace StoryVerseBackEnd.Utils
                              })
                              .ToList();
         }
-
 
         public static void AddStory(StoryModel storyModel)
         {

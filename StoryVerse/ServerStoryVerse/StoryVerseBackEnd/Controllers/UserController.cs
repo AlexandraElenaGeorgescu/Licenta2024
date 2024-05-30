@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -19,6 +20,8 @@ namespace StoryVerseBackEnd.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
+        private static ConcurrentDictionary<string, string> verificationCodes = new ConcurrentDictionary<string, string>();
+
         #region User Entity
 
         [HttpPost("signup")]
@@ -47,7 +50,7 @@ namespace StoryVerseBackEnd.Controllers
             return BadRequest("Invalid email or password!");
         }
 
-        [HttpGet("who-i-am"),Authorize]
+        [HttpGet("who-i-am"), Authorize]
         public IActionResult WhoIAm([FromHeader(Name = "Authorization")] string token)
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
@@ -57,6 +60,59 @@ namespace StoryVerseBackEnd.Controllers
             uam.Birthday = "";
 
             return Ok(uam);
+        }
+
+        [HttpPost("send-verification-code")]
+        public IActionResult SendVerificationCode([FromBody] EmailModel model)
+        {
+            var email = model.Email;
+            UserModel user = MongoUtil.GetUser(email);
+            if (user != null)
+            {
+                return Conflict("Email already used");
+            }
+
+            // Generate verification code
+            var verificationCode = new Random().Next(100000, 999999).ToString();
+
+            // Store the code temporarily
+            verificationCodes[email] = verificationCode;
+
+            var smtpClient = new SmtpClient
+            {
+                Host = "smtp.gmail.com",
+                Port = 587,
+                EnableSsl = true,
+                Credentials = new NetworkCredential(Environment.GetEnvironmentVariable("SmtpUserName"), Environment.GetEnvironmentVariable("SmtpPassword"))
+            };
+
+            using (var message = new MailMessage(new MailAddress(Environment.GetEnvironmentVariable("SmtpUserName"), "StoryVerse"), new MailAddress(email))
+            {
+                Subject = "Verification Code",
+                Body = "Your verification code is " + verificationCode
+            })
+            {
+                smtpClient.Send(message);
+            }
+
+            return Ok("Verification code sent");
+        }
+
+        [HttpPost("verify-code-and-signup")]
+        public IActionResult VerifyCodeAndSignup([FromBody] VerifyCodeAndSignupModel model)
+        {
+            if (!verificationCodes.TryGetValue(model.User.Email, out var storedCode) || storedCode != model.VerificationCode)
+            {
+                return BadRequest("Invalid verification code or email");
+            }
+
+            // Remove the code after successful verification
+            verificationCodes.TryRemove(model.User.Email, out _);
+
+            // Create user
+            MongoUtil.AddUser(model.User);
+
+            return Ok("User created successfully");
         }
 
         [HttpGet("send-password/{email}")]
@@ -89,7 +145,6 @@ namespace StoryVerseBackEnd.Controllers
             return Ok("The entered email address is not found in the database!");
         }
 
-
         [HttpPatch("change-password"), Authorize]
         public IActionResult ChangePassword([FromBody] UserApiModel newPass, [FromHeader(Name = "Authorization")] string token)
         {
@@ -109,7 +164,8 @@ namespace StoryVerseBackEnd.Controllers
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
             return Ok(MongoUtil.GetRegisteredStories(userId, pageSize, pageId)
-                .ConvertAll(new Converter<StoryModel, StoryApiModel>(e => {
+                .ConvertAll(new Converter<StoryModel, StoryApiModel>(e =>
+                {
                     return e.getstoryApiModel();
                 })));
         }
@@ -134,7 +190,8 @@ namespace StoryVerseBackEnd.Controllers
         {
             ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
             return Ok(MongoUtil.GetCreatedStories(userId, pageSize, pageId)
-                .ConvertAll(new Converter<StoryModel, StoryApiModel>(e => {
+                .ConvertAll(new Converter<StoryModel, StoryApiModel>(e =>
+                {
                     return e.getstoryApiModel();
                 })));
         }
