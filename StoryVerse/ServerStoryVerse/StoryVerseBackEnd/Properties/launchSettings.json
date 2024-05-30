@@ -18,7 +18,7 @@
         "MongoDBHostAndPort": "localhost:27017",
         "MongoDBDatabaseName": "StoryVerse",
         "SmtpUserName": "storyverse.donotreply@gmail.com",
-        "SmtpPassword": "licenta2024",
+        "SmtpPassword": "ibxg wsky ntig nnzf",
         "JwtKey": "Donec id nisl dapibus, pretium libero vitae, malesuada neque. Fusce eget sem id est sagittis faucibus eu id est. Maecenas rutrum neque ornare turpis efficitur, quis vestibulum nunc vehicula. Nulla facilisi. Integer eleifend justo in ex tempus mollis. Sed eget odio at velit molestie elementum. Pellentesque malesuada metus dolor, quis blandit quam consectetur sit amet. Curabitur laoreet vulputate odio et pulvinar. Praesent placerat, libero eget vehicula eleifend, dui odio sagittis ipsum, quis dictum arcu velit eget libero. Curabitur lacus metus, feugiat at pellentesque a, dignissim ut est. Proin non ligula et libero iaculis euismod. Donec blandit sagittis risus a dapibus.",
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
