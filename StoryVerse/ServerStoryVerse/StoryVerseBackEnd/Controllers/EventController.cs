@@ -55,45 +55,6 @@ namespace StoryVerseBackEnd.Controllers
             return Unauthorized();
         }
 
-        [HttpGet("recommendations/{pageSize}/{pageId}"), Authorize]
-        public IActionResult GetRecommendations([FromHeader(Name = "Authorization")] string token, [FromRoute] int pageSize, [FromRoute] int pageId)
-        {
-            string userId = JwtUtil.GetUserIdFromToken(token);
-            string filename = @"storyRecommenderTestedOnMovieLensSmallDataSet\predictions\" + userId.ToString() + ".txt";
-
-            if (!System.IO.File.Exists(filename))
-            {
-                Process cmd = new Process();
-                cmd.StartInfo.FileName = "cmd.exe";
-                cmd.StartInfo.Arguments = "/C cd storyRecommenderTestedOnMovieLensSmallDataSet & Python35\\python.exe predict.py " + userId;
-                cmd.Start();
-                cmd.WaitForExit();
-            }
-
-            List<StoryApiModel> apiStories = new List<StoryApiModel>();
-
-            if (System.IO.File.Exists(filename))
-            {
-                using (StreamReader reader = new StreamReader(filename))
-                {
-                    for (int i = 0; i < pageSize * pageId && !reader.EndOfStream; i++)
-                        reader.ReadLine();
-
-                    for (int i = 0; i < pageSize && !reader.EndOfStream; i++)
-                    {
-                        string line = reader.ReadLine();
-                        string[] values = line.Split(',');
-                        string storyIdStr = values[0];
-                        ObjectId storyId = new ObjectId(storyIdStr);
-                        StoryModel em = MongoUtil.GetStory(storyId);
-                        apiStories.Add(em.getstoryApiModel());
-                    }
-                }
-            }
-
-            return Ok(apiStories);
-        }
-
         [HttpPost("create"), Authorize]
         public IActionResult Create([FromHeader(Name = "Authorization")] string token, [FromBody] StoryApiModel storyApiModel)
         {

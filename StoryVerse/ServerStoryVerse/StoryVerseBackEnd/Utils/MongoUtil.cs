@@ -239,38 +239,6 @@ namespace StoryVerseBackEnd.Utils
             _reviewColl.DeleteOne(r => r.UserId == userId && r.StoryId == storyId);
         }
 
-        public static List<StoryModel> getRecommendations()
-        {
-            long totalUsers = _userColl.CountDocuments(u => true);
-            long totalStories = _storyColl.CountDocuments(e => true);
-
-            using (StreamWriter file = new StreamWriter("AllReviewsMatrix.txt"))
-            {
-                file.WriteLine(totalUsers + " " + totalStories);
-
-                for (int i = 0; i < totalUsers; i++)
-                {
-                    UserModel user = _userColl.Find(u => true).Skip(i).Limit(1).FirstOrDefault();
-                    for (int j = 0; j < totalStories; j++)
-                    {
-                        StoryModel evnt = _storyColl.Find(u => true).Skip(j).Limit(1).FirstOrDefault();
-                        ReviewModel review = GetReview(user.Id, evnt.Id);
-                        if (review != null)
-                        {
-                            file.Write(review.Rating + " ");
-                        }
-                        else
-                        {
-                            file.Write("0 ");
-                        }
-                    }
-                    file.WriteLine();
-                }
-            }
-
-            return null;
-        }
-
         #endregion
 
         #region ChatRoom Util
