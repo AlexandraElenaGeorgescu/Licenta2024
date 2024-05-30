@@ -65,13 +65,13 @@ namespace StoryVerseBackEnd.Utils
         {
             String status = "server problem";
             UserModel user = GetUser(userId);
-            StoryModel ev = GetStory(storyId);
+            StoryModel st = GetStory(storyId);
 
-            if (ev.CreatorId == user.Id)
+            if (st.CreatorId == user.Id)
             {
                 status = "creator";
             }
-            else if (user.RegisteredStories.Contains(ev.Id))
+            else if (user.RegisteredStories.Contains(st.Id))
             {
                 status = "registered";
             }
@@ -171,8 +171,8 @@ namespace StoryVerseBackEnd.Utils
 
         public static List<long> countRegistrations(ObjectId storyId)
         {
-            StoryModel ev = GetStory(storyId);
-            ObjectId creatorId = ev.CreatorId;
+            StoryModel st = GetStory(storyId);
+            ObjectId creatorId = st.CreatorId;
             List<ObjectId> otherStories = _storyColl.Find(e => e.CreatorId == creatorId && e.Id != storyId).Project(e => e.Id).ToList();
             List<UserModel> allUsers = _userColl.Find(u => true).ToList();
 
@@ -188,8 +188,8 @@ namespace StoryVerseBackEnd.Utils
         {
             List<long> resp = new List<long>();
             List<string> labels = new List<string>();
-            StoryModel ev = GetStory(storyId);
-            DateTime d1 = ev.DateCreated.AddDays(-ev.DateCreated.Day + 1);
+            StoryModel st = GetStory(storyId);
+            DateTime d1 = st.DateCreated.AddDays(-st.DateCreated.Day + 1);
             DateTime d2 = DateTime.Now;
             List<MessageModel> msgs = _messageColl.Find(m => m.StoryId == storyId).ToList();
 
@@ -291,7 +291,23 @@ namespace StoryVerseBackEnd.Utils
             var indexModel = new CreateIndexModel<StoryModel>(indexKeysDefinition);
             _storyColl.Indexes.CreateOne(indexModel);
         }
+        public static void UpdateStory(StoryModel storyModel)
+        {
+            var filter = Builders<StoryModel>.Filter.Eq(e => e.Id, storyModel.Id);
+            var update = Builders<StoryModel>.Update
+                            .Set(e => e.Name, storyModel.Name)
+                            .Set(e => e.Description, storyModel.Description)
+                            .Set(e => e.Genre, storyModel.Genre)
+                            .Set(e => e.ActualStory, storyModel.ActualStory)
+                            .Set(e => e.Image, storyModel.Image);
 
+            _storyColl.UpdateOne(filter, update);
+        }
+
+        public static void DeleteStory(ObjectId storyId)
+        {
+            _storyColl.DeleteOne(e => e.Id == storyId);
+        }
 
         private static MongoClient _conn;
         private static IMongoDatabase _db;
