@@ -30,7 +30,38 @@ namespace StoryVerseBackEnd.Utils
 
         public static void AddUser(UserModel userModel)
         {
+            if (userModel.RegisteredStories == null)
+            {
+                userModel.RegisteredStories = new List<ObjectId>();
+            }
+
             _userColl.InsertOne(userModel);
+        }
+
+        public static void DeleteUser(ObjectId userId)
+        {
+            _userColl.DeleteOne(u => u.Id == userId);
+
+            _reviewColl.DeleteMany(r => r.UserId == userId);
+
+            var userStories = _storyColl.Find(s => s.CreatorId == userId).ToList();
+            foreach (var story in userStories)
+            {
+                _reviewColl.DeleteMany(r => r.StoryId == story.Id);
+
+                _messageColl.DeleteMany(m => m.StoryId == story.Id);
+
+                _storyColl.DeleteOne(s => s.Id == story.Id);
+            }
+
+            _messageColl.DeleteMany(m => m.UserId == userId);
+        }
+
+        public static void UpdateUserName(ObjectId userId, string name, string surname)
+        {
+            var filter = Builders<UserModel>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<UserModel>.Update.Set(u => u.Name, name).Set(u => u.Surname, surname);
+            _userColl.UpdateOne(filter, update);
         }
 
         public static void ChangePassword(ObjectId userId, string newPass)
@@ -138,6 +169,19 @@ namespace StoryVerseBackEnd.Utils
         public static void AddStory(StoryModel storyModel)
         {
             _storyColl.InsertOne(storyModel);
+        }
+
+        public static void UpdateStory(StoryModel storyModel)
+        {
+            var filter = Builders<StoryModel>.Filter.Eq(e => e.Id, storyModel.Id);
+            var update = Builders<StoryModel>.Update
+                            .Set(e => e.Name, storyModel.Name)
+                            .Set(e => e.Description, storyModel.Description)
+                            .Set(e => e.Genre, storyModel.Genre)
+                            .Set(e => e.ActualStory, storyModel.ActualStory)
+                            .Set(e => e.Image, storyModel.Image);
+
+            _storyColl.UpdateOne(filter, update);
         }
 
         public static void UpdateImage(ObjectId storyId, string image)
@@ -291,23 +335,12 @@ namespace StoryVerseBackEnd.Utils
             var indexModel = new CreateIndexModel<StoryModel>(indexKeysDefinition);
             _storyColl.Indexes.CreateOne(indexModel);
         }
-        public static void UpdateStory(StoryModel storyModel)
-        {
-            var filter = Builders<StoryModel>.Filter.Eq(e => e.Id, storyModel.Id);
-            var update = Builders<StoryModel>.Update
-                            .Set(e => e.Name, storyModel.Name)
-                            .Set(e => e.Description, storyModel.Description)
-                            .Set(e => e.Genre, storyModel.Genre)
-                            .Set(e => e.ActualStory, storyModel.ActualStory)
-                            .Set(e => e.Image, storyModel.Image);
-
-            _storyColl.UpdateOne(filter, update);
-        }
 
         public static void DeleteStory(ObjectId storyId)
         {
             _storyColl.DeleteOne(e => e.Id == storyId);
         }
+
 
         private static MongoClient _conn;
         private static IMongoDatabase _db;

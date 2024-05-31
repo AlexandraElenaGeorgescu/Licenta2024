@@ -38,6 +38,23 @@ namespace StoryVerseBackEnd.Controllers
             return BadRequest("Invalid email or password!");
         }
 
+        [HttpDelete("delete-account"), Authorize]
+        public IActionResult DeleteAccount([FromHeader(Name = "Authorization")] string token)
+        {
+            ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
+            MongoUtil.DeleteUser(userId);
+            return Ok("User account and related data deleted successfully");
+        }
+
+        [HttpPatch("update-name"), Authorize]
+        public IActionResult UpdateName([FromBody] UserApiModel updatedUser, [FromHeader(Name = "Authorization")] string token)
+        {
+            ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
+            MongoUtil.UpdateUserName(userId, updatedUser.Name, updatedUser.Surname);
+            return Ok("User name updated successfully");
+        }
+
+
         [HttpGet("who-i-am"), Authorize]
         public IActionResult WhoIAm([FromHeader(Name = "Authorization")] string token)
         {
@@ -94,14 +111,15 @@ namespace StoryVerseBackEnd.Controllers
                 return BadRequest("Invalid verification code or email");
             }
 
-            // Remove the code after successful verification
             verificationCodes.TryRemove(model.User.Email, out _);
 
-            // Create user
+            model.User.RegisteredStories = new List<ObjectId>();
+
             MongoUtil.AddUser(model.User);
 
             return Ok("User created successfully");
         }
+
 
         [HttpGet("send-password/{email}")]
         public IActionResult SendPasswordThroughEmail([FromRoute] string email)
