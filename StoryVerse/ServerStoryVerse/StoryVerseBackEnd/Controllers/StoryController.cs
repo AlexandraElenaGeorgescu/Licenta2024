@@ -134,7 +134,7 @@ namespace StoryVerseBackEnd.Controllers
         }
 
         [HttpGet("chat-messages/{storyId}")]
-        public IActionResult GetMessages([FromRoute] String storyId, [FromHeader(Name = "Authorization")] string token)
+        public IActionResult GetMessages([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
         {
             ObjectId reqUserId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
             List<MessageModel> messages = MongoUtil.GetMessages(new ObjectId(storyId));
@@ -143,12 +143,22 @@ namespace StoryVerseBackEnd.Controllers
                 ObjectId pubUserId = msg.UserId;
                 if (pubUserId == reqUserId)
                     return msg.getMessageApiModel();
+
+                var user = MongoUtil.GetUser(pubUserId);
+                if (user == null)
+                {
+                    // Handle the case where the user does not exist
+                    msg.DateSent = msg.DateSent.AddHours(3);
+                    return msg.getMessageApiModel("Unknown User");
+                }
+
                 msg.DateSent = msg.DateSent.AddHours(3);
-                return msg.getMessageApiModel(MongoUtil.GetUser(pubUserId).Name);
+                return msg.getMessageApiModel(user.Name);
             }));
 
             return Ok(apiMessages);
         }
+
 
         [HttpPut("update/{storyId}"), Authorize]
         public IActionResult UpdateStory([FromRoute] string storyId, [FromBody] StoryApiModel storyApiModel, [FromHeader(Name = "Authorization")] string token)
