@@ -12,5 +12,6 @@ namespace StoryVerseBackEnd.Models
         public String Birthday { get; set; }
         public String Name { get; set; }
         public String Surname { get; set; }
+        public String Avatar { get; set; }
     }
 }

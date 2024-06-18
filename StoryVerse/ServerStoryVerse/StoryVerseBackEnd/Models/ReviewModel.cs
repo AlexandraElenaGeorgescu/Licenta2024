@@ -21,5 +21,7 @@ namespace StoryVerseBackEnd.Models
         public ObjectId UserId { get; set; }
         [BsonElement("storyId")]
         public ObjectId StoryId { get; set; }
+        [BsonElement("avatarUrl")]
+        public ObjectId AvatarUrl { get; set; }
     }
 }

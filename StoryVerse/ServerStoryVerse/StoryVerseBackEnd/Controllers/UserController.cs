@@ -62,9 +62,18 @@ namespace StoryVerseBackEnd.Controllers
             UserModel um = MongoUtil.GetUser(userId);
             UserApiModel uam = um.getUserApiModel();
             uam.Password = "";
-            uam.Birthday = "";
+            uam.Birthday = um.Birthday.ToShortDateString();
+            uam.Avatar = um.Avatar;
 
             return Ok(uam);
+        }
+
+        [HttpPatch("update-avatar"), Authorize]
+        public IActionResult UpdateAvatar([FromBody] UserApiModel updatedUser, [FromHeader(Name = "Authorization")] string token)
+        {
+            ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
+            MongoUtil.UpdateUserAvatar(userId, updatedUser.Avatar);
+            return Ok("User avatar updated successfully");
         }
 
         [HttpPost("send-verification-code")]

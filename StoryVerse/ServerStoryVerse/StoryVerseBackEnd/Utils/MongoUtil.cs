@@ -56,7 +56,12 @@ namespace StoryVerseBackEnd.Utils
 
             _messageColl.DeleteMany(m => m.UserId == userId);
         }
-
+        public static void UpdateUserAvatar(ObjectId userId, string avatar)
+        {
+            var filter = Builders<UserModel>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<UserModel>.Update.Set(u => u.Avatar, avatar);
+            _userColl.UpdateOne(filter, update);
+        }
         public static void UpdateUserName(ObjectId userId, string name, string surname)
         {
             var filter = Builders<UserModel>.Filter.Eq(u => u.Id, userId);
@@ -161,7 +166,8 @@ namespace StoryVerseBackEnd.Utils
                                  Description = story.Description,
                                  ActualStory = story.ActualStory,
                                  Image = story.Image,
-                                 Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname
+                                 Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
+                                 AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
                              })
                              .ToList();
         }
@@ -202,7 +208,19 @@ namespace StoryVerseBackEnd.Utils
                                     .Sort(sort)
                                     .Skip(pageId * pageSize)
                                     .Limit(pageSize)
-                                    .ToList();
+                                    .Project(story => new StoryModel
+                                    {
+                                        Id = story.Id,
+                                        Name = story.Name,
+                                        DateCreated = story.DateCreated,
+                                        Genre = story.Genre,
+                                        Description = story.Description,
+                                        ActualStory = story.ActualStory,
+                                        Image = story.Image,
+                                        Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
+                                        AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
+                                    })
+                             .ToList();
 
             results.ForEach(story =>
             {

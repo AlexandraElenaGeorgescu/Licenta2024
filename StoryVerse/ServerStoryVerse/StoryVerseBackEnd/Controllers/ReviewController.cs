@@ -20,7 +20,7 @@ namespace StoryVerseBackEnd.Controllers
             List<ReviewModel> reviews = MongoUtil.GetReviews(new ObjectId(storyId), pageSize, pageId);
             List<ReviewApiModel> apiReviews = reviews.ConvertAll(new Converter<ReviewModel, ReviewApiModel>(r => {
                 UserModel user = MongoUtil.GetUser(r.UserId);
-                ReviewApiModel apiR = r.getReviewApiModel(user.Name);
+                ReviewApiModel apiR = r.getReviewApiModel(user.Name, user.Avatar);
                 return apiR;
             }));
 
@@ -36,11 +36,13 @@ namespace StoryVerseBackEnd.Controllers
 
             if (review != null)
             {
-                return Ok(review.getReviewApiModel(user.Name));
+                return Ok(review.getReviewApiModel(user.Name, user.Avatar)); // Pass the avatar URL
             }
 
             return Ok(new ReviewModel { Rating = 0, Opinion = "" });
         }
+
+
         [HttpPut("edit/{storyId}")]
         public IActionResult EditReview([FromRoute] String storyId, [FromHeader(Name = "Authorization")] String userToken, [FromBody] ReviewApiModel reviewApiModel)
         {

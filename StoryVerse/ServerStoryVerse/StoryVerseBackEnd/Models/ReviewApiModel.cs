@@ -12,5 +12,6 @@ namespace StoryVerseBackEnd.Models
         public String Opinion { get; set; }
         public String LastEdit { get; set; }
         public String UserName { get; set; }
+        public string AvatarUrl { get; set; }
     }
 }

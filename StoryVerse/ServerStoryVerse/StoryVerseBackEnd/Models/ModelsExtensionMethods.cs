@@ -68,7 +68,8 @@ namespace StoryVerseBackEnd.Models
                 Description = storyModel.Description,
                 ActualStory = storyModel.ActualStory,
                 Image = storyModel.Image,
-                Author = storyModel.Author
+                Author = storyModel.Author,
+                AuthorAvatarUrl = storyModel.AuthorAvatarUrl
             };
 
             return storyApiModel;
@@ -89,18 +90,20 @@ namespace StoryVerseBackEnd.Models
             return reviewModel;
         }
 
-        public static ReviewApiModel getReviewApiModel(this ReviewModel reviewModel, String userName)
+        public static ReviewApiModel getReviewApiModel(this ReviewModel reviewModel, String userName, String avatarUrl)
         {
             ReviewApiModel reviewApiModel = new ReviewApiModel
             {
                 Rating = (int)reviewModel.Rating,
                 Opinion = reviewModel.Opinion,
                 LastEdit = String.Format("{0:yyyy-MM-dd HH:mm}", reviewModel.LastEdit),
-                UserName = userName
+                UserName = userName,
+                AvatarUrl = avatarUrl 
             };
 
             return reviewApiModel;
         }
+
 
         public static MessageApiModel getMessageApiModel(this MessageModel messageModel, string userName = "")
         {
