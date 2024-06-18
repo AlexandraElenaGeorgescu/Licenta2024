@@ -150,26 +150,99 @@ namespace StoryVerseBackEnd.Utils
             return _storyColl.Find(e => e.Id == storyId).FirstOrDefault();
         }
 
+        public static List<StoryModel> Search(int pageSize, int pageId, string searchText)
+        {
+            if (string.IsNullOrEmpty(searchText))
+            {
+                throw new ArgumentException("Search text cannot be null or empty.");
+            }
+            if (pageSize <= 0)
+            {
+                throw new ArgumentException("Page size must be greater than zero.");
+            }
+            if (pageId < 0)
+            {
+                throw new ArgumentException("Page ID cannot be negative.");
+            }
+
+            try
+            {
+                var filter = Builders<StoryModel>.Filter.Text(searchText);
+                var projection = Builders<StoryModel>.Projection.MetaTextScore("TextMatchScore");
+                var sort = Builders<StoryModel>.Sort.MetaTextScore("TextMatchScore");
+
+                var results = _storyColl.Find(filter)
+                                        .Project<StoryModel>(projection)
+                                        .Sort(sort)
+                                        .Skip(pageId * pageSize)
+                                        .Limit(pageSize)
+                                        .Project(story => new StoryModel
+                                        {
+                                            Id = story.Id,
+                                            Name = story.Name,
+                                            DateCreated = story.DateCreated,
+                                            Genre = story.Genre,
+                                            Description = story.Description,
+                                            ActualStory = story.ActualStory,
+                                            Image = story.Image,
+                                            Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
+                                            AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
+                                        })
+                                        .ToList();
+
+                results.ForEach(story =>
+                {
+                    story.TextMatchScore = null;
+                });
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception and throw a custom error message
+                // Logger.LogError(ex, "An error occurred while searching stories.");
+                throw new Exception("An error occurred while searching stories. Please try again later.");
+            }
+        }
+
         public static List<StoryModel> GetStories(int pageSize, int pageId, string genre = "")
         {
-            var filter = string.IsNullOrEmpty(genre) ? Builders<StoryModel>.Filter.Empty : Builders<StoryModel>.Filter.Eq(s => s.Genre, genre);
+            if (pageSize <= 0)
+            {
+                throw new ArgumentException("Page size must be greater than zero.");
+            }
+            if (pageId < 0)
+            {
+                throw new ArgumentException("Page ID cannot be negative.");
+            }
 
-            return _storyColl.Find(filter)
-                             .Skip(pageId * pageSize)
-                             .Limit(pageSize)
-                             .Project(story => new StoryModel
-                             {
-                                 Id = story.Id,
-                                 Name = story.Name,
-                                 DateCreated = story.DateCreated,
-                                 Genre = story.Genre,
-                                 Description = story.Description,
-                                 ActualStory = story.ActualStory,
-                                 Image = story.Image,
-                                 Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
-                                 AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
-                             })
-                             .ToList();
+            try
+            {
+                var filter = string.IsNullOrEmpty(genre) ? Builders<StoryModel>.Filter.Empty : Builders<StoryModel>.Filter.Eq(s => s.Genre, genre);
+
+                return _storyColl.Find(filter)
+                                 .Skip(pageId * pageSize)
+                                 .Limit(pageSize)
+                                 .Project(story => new StoryModel
+                                 {
+                                     Id = story.Id,
+                                     Name = story.Name,
+                                     DateCreated = story.DateCreated,
+                                     Genre = story.Genre,
+                                     Description = story.Description,
+                                     ActualStory = story.ActualStory,
+                                     Image = story.Image,
+                                     Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
+                                     AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
+                                 })
+                                 .ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception and throw a custom error message
+                // Logger.LogError(ex, "An error occurred while fetching stories.");
+                throw new Exception("An error occurred while fetching stories. Please try again later.");
+            }
         }
 
         public static void AddStory(StoryModel storyModel)
@@ -196,40 +269,6 @@ namespace StoryVerseBackEnd.Utils
             var update = Builders<StoryModel>.Update.Set(e => e.Image, image);
             _storyColl.UpdateOne(filter, update);
         }
-
-        public static List<StoryModel> Search(int pageSize, int pageId, string searchText)
-        {
-            var filter = Builders<StoryModel>.Filter.Text(searchText);
-            var projection = Builders<StoryModel>.Projection.MetaTextScore("TextMatchScore");
-            var sort = Builders<StoryModel>.Sort.MetaTextScore("TextMatchScore");
-
-            var results = _storyColl.Find(filter)
-                                    .Project<StoryModel>(projection)
-                                    .Sort(sort)
-                                    .Skip(pageId * pageSize)
-                                    .Limit(pageSize)
-                                    .Project(story => new StoryModel
-                                    {
-                                        Id = story.Id,
-                                        Name = story.Name,
-                                        DateCreated = story.DateCreated,
-                                        Genre = story.Genre,
-                                        Description = story.Description,
-                                        ActualStory = story.ActualStory,
-                                        Image = story.Image,
-                                        Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
-                                        AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
-                                    })
-                             .ToList();
-
-            results.ForEach(story =>
-            {
-                story.TextMatchScore = null; 
-            });
-
-            return results;
-        }
-
 
         public static List<long> countRegistrations(ObjectId storyId)
         {
@@ -284,8 +323,35 @@ namespace StoryVerseBackEnd.Utils
 
         public static List<ReviewModel> GetReviews(ObjectId storyId, int pageSize, int pageId)
         {
-            return _reviewColl.Find(r => r.StoryId == storyId).Sort(Builders<ReviewModel>.Sort.Descending(r => r.LastEdit)).Skip(pageId * pageSize).Limit(pageSize).ToList();
+            if (storyId == ObjectId.Empty)
+            {
+                throw new ArgumentException("Invalid story ID.");
+            }
+            if (pageSize <= 0)
+            {
+                throw new ArgumentException("Page size must be greater than zero.");
+            }
+            if (pageId < 0)
+            {
+                throw new ArgumentException("Page ID cannot be negative.");
+            }
+
+            try
+            {
+                return _reviewColl.Find(r => r.StoryId == storyId)
+                                  .Sort(Builders<ReviewModel>.Sort.Descending(r => r.LastEdit))
+                                  .Skip(pageId * pageSize)
+                                  .Limit(pageSize)
+                                  .ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception and throw a custom error message
+                // Logger.LogError(ex, "An error occurred while fetching reviews.");
+                throw new Exception("An error occurred while fetching reviews. Please try again later.");
+            }
         }
+
 
         public static ReviewModel GetReview(ObjectId userId, ObjectId storyId)
         {
