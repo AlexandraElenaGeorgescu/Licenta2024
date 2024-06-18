@@ -113,6 +113,13 @@ namespace StoryVerseBackEnd.Controllers
             return Ok(storyModel.getstoryApiModel());
         }
 
+        [HttpGet("genres")]
+        public IActionResult GetGenres()
+        {
+            var genres = MongoUtil.GetAllGenres();
+            return Ok(genres);
+        }
+
         [HttpGet("browse/{pageSize}/{pageId}")]
         public IActionResult Browse([FromRoute] int pageSize, [FromRoute] int pageId, [FromQuery] string genre = "")
         {

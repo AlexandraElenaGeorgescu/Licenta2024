@@ -204,6 +204,12 @@ namespace StoryVerseBackEnd.Utils
                 throw new Exception("An error occurred while searching stories. Please try again later.");
             }
         }
+        public static List<string> GetAllGenres()
+        {
+            var collection = _storyColl;
+            var genres = collection.Distinct<string>("Genre", new BsonDocument()).ToList();
+            return genres;
+        }
 
         public static List<StoryModel> GetStories(int pageSize, int pageId, string genre = "")
         {
