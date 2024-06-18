@@ -206,7 +206,7 @@ namespace StoryVerseBackEnd.Utils
 
             results.ForEach(story =>
             {
-                story.TextMatchScore = null; // Assuming StoryModel has a property for TextMatchScore, otherwise skip this line
+                story.TextMatchScore = null; 
             });
 
             return results;
