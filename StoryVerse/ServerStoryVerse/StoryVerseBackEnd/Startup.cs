@@ -39,7 +39,14 @@ namespace StoryVerseBackEnd
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder => builder.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader());
+            });
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddSwaggerGen(c =>
@@ -47,7 +54,8 @@ namespace StoryVerseBackEnd
                 c.SwaggerDoc("v1", new Info { Title = "StoryVerse", Version = "v1" });
             });
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -66,6 +74,7 @@ namespace StoryVerseBackEnd
                                             Environment.GetEnvironmentVariable("MongoDBDatabaseName"));
         }
 
+
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -81,6 +90,7 @@ namespace StoryVerseBackEnd
                 .AllowAnyMethod()
                 .AllowAnyOrigin()
                 .AllowCredentials());
+            app.UseCors("AllowSpecificOrigin");
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
