@@ -24,6 +24,8 @@ namespace StoryVerseBackEnd.Models
         [BsonElement("registeredStories")]
         public List<ObjectId> RegisteredStories { get; set; }
         [BsonElement("avatar")] 
-        public String Avatar { get; set; } 
+        public String Avatar { get; set; }
+        [BsonElement("bookmarkedStories")]
+        public List<ObjectId> BookmarkedStories { get; set; }
     }
 }

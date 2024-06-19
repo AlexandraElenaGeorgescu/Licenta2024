@@ -44,7 +44,8 @@ namespace StoryVerseBackEnd
                 options.AddPolicy("AllowSpecificOrigin",
                     builder => builder.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
                                       .AllowAnyMethod()
-                                      .AllowAnyHeader());
+                                      .AllowAnyHeader()
+                                      .AllowCredentials());
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
@@ -74,7 +75,6 @@ namespace StoryVerseBackEnd
                                             Environment.GetEnvironmentVariable("MongoDBDatabaseName"));
         }
 
-
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -86,10 +86,6 @@ namespace StoryVerseBackEnd
                 app.UseHsts();
             }
 
-            app.UseCors(builder => builder.AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowAnyOrigin()
-                .AllowCredentials());
             app.UseCors("AllowSpecificOrigin");
 
             app.UseSwagger();
@@ -134,6 +130,7 @@ namespace StoryVerseBackEnd
             });
             app.UseMvc();
         }
+
 
         private ConcurrentDictionary<string, ConcurrentBag<WebSocket>> chatRooms = new ConcurrentDictionary<string, ConcurrentBag<WebSocket>>();
 

@@ -19,6 +19,30 @@ namespace StoryVerseBackEnd.Controllers
     [ApiController]
     public class StoryController : ControllerBase
     {
+        [HttpPatch("bookmark-story/{storyId}"), Authorize]
+        public IActionResult BookmarkStory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
+        {
+            ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
+            MongoUtil.BookmarkStory(new ObjectId(storyId), userId);
+            return Ok("Story bookmarked successfully");
+        }
+
+        [HttpGet("bookmarked-stories"), Authorize]
+        public IActionResult GetBookmarkedStories([FromHeader(Name = "Authorization")] string token)
+        {
+            ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
+            var stories = MongoUtil.GetBookmarkedStories(userId);
+            return Ok(stories);
+        }
+
+        [HttpGet("recommendations"), Authorize]
+        public IActionResult GetRecommendations([FromHeader(Name = "Authorization")] string token)
+        {
+            ObjectId userId = new ObjectId(JwtUtil.GetUserIdFromToken(token));
+            var recommendations = MongoUtil.GetRecommendations(userId);
+            return Ok(recommendations);
+        }
+
         [HttpGet("pie-chart/{storyId}"), Authorize]
         public IActionResult GetPieChartData([FromHeader(Name = "Authorization")] string token, [FromRoute] string storyId)
         {

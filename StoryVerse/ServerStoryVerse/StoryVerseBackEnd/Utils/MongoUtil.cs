@@ -36,6 +36,7 @@ namespace StoryVerseBackEnd.Utils
             }
 
             _userColl.InsertOne(userModel);
+            AddNotification(userModel.Id, "Welcome to StoryVerse! Your account has been created successfully.");
         }
 
         public static void DeleteUser(ObjectId userId)
@@ -48,36 +49,38 @@ namespace StoryVerseBackEnd.Utils
             foreach (var story in userStories)
             {
                 _reviewColl.DeleteMany(r => r.StoryId == story.Id);
-
                 _messageColl.DeleteMany(m => m.StoryId == story.Id);
-
                 _storyColl.DeleteOne(s => s.Id == story.Id);
             }
 
             _messageColl.DeleteMany(m => m.UserId == userId);
         }
+
         public static void UpdateUserAvatar(ObjectId userId, string avatar)
         {
             var filter = Builders<UserModel>.Filter.Eq(u => u.Id, userId);
             var update = Builders<UserModel>.Update.Set(u => u.Avatar, avatar);
             _userColl.UpdateOne(filter, update);
+            AddNotification(userId, "Your avatar has been updated.");
         }
+
         public static void UpdateUserName(ObjectId userId, string name, string surname)
         {
             var filter = Builders<UserModel>.Filter.Eq(u => u.Id, userId);
             var update = Builders<UserModel>.Update.Set(u => u.Name, name).Set(u => u.Surname, surname);
             _userColl.UpdateOne(filter, update);
+            AddNotification(userId, "Your name has been updated.");
         }
 
         public static void ChangePassword(ObjectId userId, string newPass)
         {
             _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Set("Password", newPass));
+            AddNotification(userId, "Your password has been changed.");
         }
 
         public static List<StoryModel> GetRegisteredStories(ObjectId userId, int pageSize, int pageId)
         {
             UserModel user = GetUser(userId);
-
             var registeredStoryIds = user?.RegisteredStories ?? new List<ObjectId>();
 
             return _storyColl.Find(e => registeredStoryIds.Contains(e.Id))
@@ -125,6 +128,7 @@ namespace StoryVerseBackEnd.Utils
             if (status == "unregistered")
             {
                 _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Push("RegisteredStories", storyId));
+                AddNotification(userId, "You have registered for a new story.");
                 return true;
             }
             return false;
@@ -136,6 +140,7 @@ namespace StoryVerseBackEnd.Utils
             if (status == "registered")
             {
                 _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Pull("RegisteredStories", storyId));
+                AddNotification(userId, "You have unregistered from a story.");
                 return true;
             }
             return false;
@@ -199,11 +204,10 @@ namespace StoryVerseBackEnd.Utils
             }
             catch (Exception ex)
             {
-                // Log the exception and throw a custom error message
-                // Logger.LogError(ex, "An error occurred while searching stories.");
                 throw new Exception("An error occurred while searching stories. Please try again later.");
             }
         }
+
         public static List<string> GetAllGenres()
         {
             var collection = _storyColl;
@@ -245,8 +249,6 @@ namespace StoryVerseBackEnd.Utils
             }
             catch (Exception ex)
             {
-                // Log the exception and throw a custom error message
-                // Logger.LogError(ex, "An error occurred while fetching stories.");
                 throw new Exception("An error occurred while fetching stories. Please try again later.");
             }
         }
@@ -267,6 +269,7 @@ namespace StoryVerseBackEnd.Utils
                             .Set(e => e.Image, storyModel.Image);
 
             _storyColl.UpdateOne(filter, update);
+            NotifyUsersOnStoryUpdate(storyModel.Id);
         }
 
         public static void UpdateImage(ObjectId storyId, string image)
@@ -274,6 +277,7 @@ namespace StoryVerseBackEnd.Utils
             var filter = Builders<StoryModel>.Filter.Eq(e => e.Id, storyId);
             var update = Builders<StoryModel>.Update.Set(e => e.Image, image);
             _storyColl.UpdateOne(filter, update);
+            NotifyUsersOnStoryUpdate(storyId);
         }
 
         public static List<long> countRegistrations(ObjectId storyId)
@@ -322,7 +326,6 @@ namespace StoryVerseBackEnd.Utils
             return new Tuple<long, float>(reviewCount, averageRating);
         }
 
-
         #endregion
 
         #region Review Util
@@ -352,12 +355,9 @@ namespace StoryVerseBackEnd.Utils
             }
             catch (Exception ex)
             {
-                // Log the exception and throw a custom error message
-                // Logger.LogError(ex, "An error occurred while fetching reviews.");
                 throw new Exception("An error occurred while fetching reviews. Please try again later.");
             }
         }
-
 
         public static ReviewModel GetReview(ObjectId userId, ObjectId storyId)
         {
@@ -379,6 +379,7 @@ namespace StoryVerseBackEnd.Utils
                 };
 
                 _reviewColl.InsertOne(reviewModel);
+                NotifyAuthorOnNewReview(storyId, userId);
             }
             else
             {
@@ -386,17 +387,20 @@ namespace StoryVerseBackEnd.Utils
                                     Builders<ReviewModel>.Update.Set(r => r.Rating, rating)
                                                                 .Set(r => r.Opinion, opinion)
                                                                 .Set(r => r.LastEdit, lastEdit));
+                NotifyAuthorOnReviewUpdate(storyId, userId);
             }
         }
 
         public static void DeleteReview(ObjectId userId, ObjectId storyId)
         {
             _reviewColl.DeleteOne(r => r.UserId == userId && r.StoryId == storyId);
+            NotifyAuthorOnReviewDeletion(storyId, userId);
         }
 
         #endregion
 
         #region ChatRoom Util
+
         public static List<MessageModel> GetMessages(ObjectId storyId)
         {
             return _messageColl.Find(m => m.StoryId == storyId).SortBy(m => m.DateSent).ToList();
@@ -405,8 +409,158 @@ namespace StoryVerseBackEnd.Utils
         public static void SaveMessage(MessageModel messageModel)
         {
             _messageColl.InsertOne(messageModel);
+            NotifyUsersOnNewMessage(messageModel.StoryId, messageModel.UserId, messageModel.Message);
         }
+
         #endregion
+
+        public static void DeleteStory(ObjectId storyId)
+        {
+            var story = GetStory(storyId);
+            if (story != null)
+            {
+                _storyColl.DeleteOne(e => e.Id == storyId);
+                NotifyUsersOnStoryDeletion(storyId);
+            }
+        }
+
+        public static void BookmarkStory(ObjectId storyId, ObjectId userId)
+        {
+            _userColl.FindOneAndUpdate(
+                Builders<UserModel>.Filter.Eq(u => u.Id, userId),
+                Builders<UserModel>.Update.AddToSet(u => u.BookmarkedStories, storyId)
+            );
+            AddNotification(userId, "You have bookmarked a story.");
+        }
+
+        public static List<StoryModel> GetBookmarkedStories(ObjectId userId)
+        {
+            var user = GetUser(userId);
+            if (user == null || user.BookmarkedStories == null)
+            {
+                return new List<StoryModel>();
+            }
+
+            return _storyColl.Find(s => user.BookmarkedStories.Contains(s.Id)).ToList();
+        }
+
+        public static List<StoryModel> GetRecommendations(ObjectId userId)
+        {
+            var user = GetUser(userId);
+
+            if (user == null)
+            {
+                return new List<StoryModel>(); // Return an empty list if the user is null
+            }
+
+            var reviewedGenres = _reviewColl
+                .Find(r => r.UserId == userId)
+                .ToList()
+                .Select(r => GetStory(r.StoryId)?.Genre) // Use null-conditional operator
+                .Where(genre => genre != null) // Filter out null genres
+                .Distinct()
+                .ToList();
+
+            var bookmarkedGenres = (user.BookmarkedStories ?? new List<ObjectId>())
+                .Select(storyId => GetStory(storyId)?.Genre)
+                .Where(genre => genre != null)
+                .Distinct()
+                .ToList();
+
+            var preferredGenres = reviewedGenres
+                .Union(bookmarkedGenres)
+                .Distinct()
+                .ToList();
+
+            var recommendedStories = _storyColl
+                .Find(s => preferredGenres.Contains(s.Genre) && !user.RegisteredStories.Contains(s.Id))
+                .Limit(5)
+                .ToList();
+
+            return recommendedStories;
+        }
+
+        public static void AddNotification(ObjectId userId, string message)
+        {
+            var notification = new NotificationModel
+            {
+                UserId = userId,
+                Message = message,
+                Date = DateTime.Now,
+                Read = false
+            };
+            _notificationColl.InsertOne(notification);
+        }
+
+        public static List<NotificationModel> GetNotifications(ObjectId userId)
+        {
+            return _notificationColl.Find(n => n.UserId == userId).SortByDescending(n => n.Date).ToList();
+        }
+
+        public static void MarkNotificationAsRead(ObjectId notificationId, ObjectId userId)
+        {
+            var filter = Builders<NotificationModel>.Filter.Eq(n => n.Id, notificationId) & Builders<NotificationModel>.Filter.Eq(n => n.UserId, userId);
+            var update = Builders<NotificationModel>.Update.Set(n => n.Read, true);
+            _notificationColl.UpdateOne(filter, update);
+        }
+
+        public static void NotifyAuthorOnNewReview(ObjectId storyId, ObjectId reviewerId)
+        {
+            var story = GetStory(storyId);
+            var reviewer = GetUser(reviewerId);
+
+            AddNotification(story.CreatorId, $"{reviewer.Name} {reviewer.Surname} reviewed your story: {story.Name}");
+        }
+
+        public static void NotifyAuthorOnReviewUpdate(ObjectId storyId, ObjectId reviewerId)
+        {
+            var story = GetStory(storyId);
+            var reviewer = GetUser(reviewerId);
+
+            AddNotification(story.CreatorId, $"{reviewer.Name} {reviewer.Surname} updated their review on your story: {story.Name}");
+        }
+
+        public static void NotifyAuthorOnReviewDeletion(ObjectId storyId, ObjectId reviewerId)
+        {
+            var story = GetStory(storyId);
+            var reviewer = GetUser(reviewerId);
+
+            AddNotification(story.CreatorId, $"{reviewer.Name} {reviewer.Surname} deleted their review on your story: {story.Name}");
+        }
+
+        public static void NotifyUsersOnNewMessage(ObjectId storyId, ObjectId senderId, string message)
+        {
+            var story = GetStory(storyId);
+            var sender = GetUser(senderId);
+            var users = _userColl.Find(u => u.BookmarkedStories.Contains(storyId) || u.RegisteredStories.Contains(storyId)).ToList();
+
+            foreach (var user in users)
+            {
+                AddNotification(user.Id, $"New message in story {story.Name} \\: {message}");
+            }
+        }
+        public static void NotifyUsersOnStoryUpdate(ObjectId storyId)
+        {
+            var story = GetStory(storyId);
+            var users = _userColl.Find(u => u.BookmarkedStories.Contains(storyId) || u.RegisteredStories.Contains(storyId)).ToList();
+
+            foreach (var user in users)
+            {
+                AddNotification(user.Id, $"Story updated: {story.Name}");
+            }
+        }
+
+        public static void NotifyUsersOnStoryDeletion(ObjectId storyId)
+        {
+            var story = GetStory(storyId);
+            var users = _userColl.Find(u => u.BookmarkedStories.Contains(storyId) || u.RegisteredStories.Contains(storyId)).ToList();
+
+            foreach (var user in users)
+            {
+                AddNotification(user.Id, $"A story you followed or were registered to has been deleted");
+            }
+        }
+
 
         public static void InitializeConnection(string connectionString, string databaseName)
         {
@@ -416,6 +570,7 @@ namespace StoryVerseBackEnd.Utils
             _storyColl = _db.GetCollection<StoryModel>("story");
             _reviewColl = _db.GetCollection<ReviewModel>("review");
             _messageColl = _db.GetCollection<MessageModel>("message");
+            _notificationColl = _db.GetCollection<NotificationModel>("notification");
 
             var indexKeysDefinition = Builders<StoryModel>.IndexKeys
                 .Text(story => story.Name)
@@ -426,17 +581,12 @@ namespace StoryVerseBackEnd.Utils
             _storyColl.Indexes.CreateOne(indexModel);
         }
 
-        public static void DeleteStory(ObjectId storyId)
-        {
-            _storyColl.DeleteOne(e => e.Id == storyId);
-        }
-
-
         private static MongoClient _conn;
         private static IMongoDatabase _db;
         private static IMongoCollection<UserModel> _userColl;
         private static IMongoCollection<StoryModel> _storyColl;
         private static IMongoCollection<ReviewModel> _reviewColl;
         private static IMongoCollection<MessageModel> _messageColl;
+        private static IMongoCollection<NotificationModel> _notificationColl;
     }
 }
