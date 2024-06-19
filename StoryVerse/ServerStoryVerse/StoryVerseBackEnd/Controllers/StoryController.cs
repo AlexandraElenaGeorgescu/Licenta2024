@@ -19,6 +19,16 @@ namespace StoryVerseBackEnd.Controllers
     [ApiController]
     public class StoryController : ControllerBase
     {
+        [HttpGet("featured")]
+        public IActionResult GetFeaturedStories()
+        {
+            var highestRated = MongoUtil.GetHighestRatedStories(1);
+            var mostSubscribed = MongoUtil.GetMostSubscribedStories(1);
+            var mostBookmarked = MongoUtil.GetMostBookmarkedStories(1);
+
+            return Ok(new { highestRated, mostSubscribed, mostBookmarked });
+        }
+
         [HttpPatch("bookmark-story/{storyId}"), Authorize]
         public IActionResult BookmarkStory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)
         {

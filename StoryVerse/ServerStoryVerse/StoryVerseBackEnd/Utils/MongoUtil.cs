@@ -129,6 +129,7 @@ namespace StoryVerseBackEnd.Utils
             {
                 _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Push("RegisteredStories", storyId));
                 AddNotification(userId, "You have registered for a new story.");
+                UpdateStorySubscribersCount(storyId);
                 return true;
             }
             return false;
@@ -141,6 +142,7 @@ namespace StoryVerseBackEnd.Utils
             {
                 _userColl.FindOneAndUpdate(Builders<UserModel>.Filter.Eq("Id", userId), Builders<UserModel>.Update.Pull("RegisteredStories", storyId));
                 AddNotification(userId, "You have unregistered from a story.");
+                UpdateStorySubscribersCount(storyId);
                 return true;
             }
             return false;
@@ -388,6 +390,7 @@ namespace StoryVerseBackEnd.Utils
                                                                 .Set(r => r.Opinion, opinion)
                                                                 .Set(r => r.LastEdit, lastEdit));
                 NotifyAuthorOnReviewUpdate(storyId, userId);
+                UpdateStoryRatings(storyId);
             }
         }
 
@@ -431,6 +434,7 @@ namespace StoryVerseBackEnd.Utils
                 Builders<UserModel>.Update.AddToSet(u => u.BookmarkedStories, storyId)
             );
             AddNotification(userId, "You have bookmarked a story.");
+            UpdateStoryBookmarksCount(storyId);
         }
 
         public static List<StoryModel> GetBookmarkedStories(ObjectId userId)
@@ -561,6 +565,57 @@ namespace StoryVerseBackEnd.Utils
             }
         }
 
+        public static List<StoryModel> GetHighestRatedStories(int limit = 1)
+        {
+            return _storyColl.Find(Builders<StoryModel>.Filter.Empty)
+                             .Sort(Builders<StoryModel>.Sort.Descending(s => s.AverageRating))
+                             .Limit(limit)
+                             .ToList();
+        }
+
+        public static List<StoryModel> GetMostSubscribedStories(int limit = 1)
+        {
+            return _storyColl.Find(Builders<StoryModel>.Filter.Empty)
+                             .Sort(Builders<StoryModel>.Sort.Descending(s => s.SubscribersCount))
+                             .Limit(limit)
+                             .ToList();
+        }
+
+        public static List<StoryModel> GetMostBookmarkedStories(int limit = 1)
+        {
+            return _storyColl.Find(Builders<StoryModel>.Filter.Empty)
+                             .Sort(Builders<StoryModel>.Sort.Descending(s => s.BookmarksCount))
+                             .Limit(limit)
+                             .ToList();
+        }
+
+        public static void UpdateStoryRatings(ObjectId storyId)
+        {
+            var reviews = _reviewColl.Find(r => r.StoryId == storyId).ToList();
+            var averageRating = reviews.Count > 0 ? reviews.Average(r => r.Rating) : 0;
+            _storyColl.UpdateOne(
+                Builders<StoryModel>.Filter.Eq(s => s.Id, storyId),
+                Builders<StoryModel>.Update.Set(s => s.AverageRating, averageRating)
+            );
+        }
+
+        public static void UpdateStorySubscribersCount(ObjectId storyId)
+        {
+            var count = _userColl.CountDocuments(u => u.RegisteredStories.Contains(storyId));
+            _storyColl.UpdateOne(
+                Builders<StoryModel>.Filter.Eq(s => s.Id, storyId),
+                Builders<StoryModel>.Update.Set(s => s.SubscribersCount, (int)count)
+            );
+        }
+
+        public static void UpdateStoryBookmarksCount(ObjectId storyId)
+        {
+            var count = _userColl.CountDocuments(u => u.BookmarkedStories.Contains(storyId));
+            _storyColl.UpdateOne(
+                Builders<StoryModel>.Filter.Eq(s => s.Id, storyId),
+                Builders<StoryModel>.Update.Set(s => s.BookmarksCount, (int)count)
+            );
+        }
 
         public static void InitializeConnection(string connectionString, string databaseName)
         {

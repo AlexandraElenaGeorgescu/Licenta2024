@@ -37,5 +37,13 @@ namespace StoryVerseBackEnd.Models
         public double? TextMatchScore { get; set; }
         public string Author { get; set; }
         public string AuthorAvatarUrl { get; set; }
+        [BsonElement("averageRating")]
+        public double AverageRating { get; set; }
+
+        [BsonElement("subscribersCount")]
+        public int SubscribersCount { get; set; }
+
+        [BsonElement("bookmarksCount")]
+        public int BookmarksCount { get; set; }
     }
 }
