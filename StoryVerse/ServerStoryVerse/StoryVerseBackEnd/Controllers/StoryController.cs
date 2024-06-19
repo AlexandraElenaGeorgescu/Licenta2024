@@ -154,7 +154,6 @@ namespace StoryVerseBackEnd.Controllers
                 var user = MongoUtil.GetUser(pubUserId);
                 if (user == null)
                 {
-                    // Handle the case where the user does not exist
                     msg.DateSent = msg.DateSent.AddHours(3);
                     return msg.getMessageApiModel("Unknown User");
                 }

@@ -87,10 +87,8 @@ namespace StoryVerseBackEnd.Controllers
                 return Conflict("Email already used");
             }
 
-            // Generate verification code
             var verificationCode = new Random().Next(100000, 999999).ToString();
 
-            // Store the code temporarily
             verificationCodes[email] = verificationCode;
 
             var smtpClient = new SmtpClient
