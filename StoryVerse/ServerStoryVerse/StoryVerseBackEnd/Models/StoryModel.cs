@@ -45,5 +45,8 @@ namespace StoryVerseBackEnd.Models
 
         [BsonElement("bookmarksCount")]
         public int BookmarksCount { get; set; }
+
+        [BsonElement("reviewCount")]
+        public int ReviewCount { get; set; }
     }
 }

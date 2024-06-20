@@ -22,12 +22,18 @@ namespace StoryVerseBackEnd.Controllers
         [HttpGet("featured")]
         public IActionResult GetFeaturedStories()
         {
-            var highestRated = MongoUtil.GetHighestRatedStories(1);
-            var mostSubscribed = MongoUtil.GetMostSubscribedStories(1);
-            var mostBookmarked = MongoUtil.GetMostBookmarkedStories(1);
+            var highestRatedStories = MongoUtil.GetHighestRatedStories();
+            var highestRated = MongoUtil.PopulateAuthorInfo(highestRatedStories);
+
+            var mostSubscribedStories = MongoUtil.GetMostSubscribedStories();
+            var mostSubscribed = MongoUtil.PopulateAuthorInfo(mostSubscribedStories);
+
+            var mostBookmarkedStories = MongoUtil.GetMostBookmarkedStories();
+            var mostBookmarked = MongoUtil.PopulateAuthorInfo(mostBookmarkedStories);
 
             return Ok(new { highestRated, mostSubscribed, mostBookmarked });
         }
+
 
         [HttpPatch("bookmark-story/{storyId}"), Authorize]
         public IActionResult BookmarkStory([FromRoute] string storyId, [FromHeader(Name = "Authorization")] string token)

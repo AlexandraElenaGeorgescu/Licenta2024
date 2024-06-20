@@ -381,6 +381,7 @@ namespace StoryVerseBackEnd.Utils
                 };
 
                 _reviewColl.InsertOne(reviewModel);
+                UpdateReviewCount(storyId);
                 NotifyAuthorOnNewReview(storyId, userId);
             }
             else
@@ -397,6 +398,7 @@ namespace StoryVerseBackEnd.Utils
         public static void DeleteReview(ObjectId userId, ObjectId storyId)
         {
             _reviewColl.DeleteOne(r => r.UserId == userId && r.StoryId == storyId);
+            UpdateReviewCount(storyId);
             NotifyAuthorOnReviewDeletion(storyId, userId);
         }
 
@@ -454,14 +456,14 @@ namespace StoryVerseBackEnd.Utils
 
             if (user == null)
             {
-                return new List<StoryModel>(); // Return an empty list if the user is null
+                return new List<StoryModel>();
             }
 
             var reviewedGenres = _reviewColl
                 .Find(r => r.UserId == userId)
                 .ToList()
-                .Select(r => GetStory(r.StoryId)?.Genre) // Use null-conditional operator
-                .Where(genre => genre != null) // Filter out null genres
+                .Select(r => GetStory(r.StoryId)?.Genre) 
+                .Where(genre => genre != null)
                 .Distinct()
                 .ToList();
 
@@ -565,28 +567,86 @@ namespace StoryVerseBackEnd.Utils
             }
         }
 
-        public static List<StoryModel> GetHighestRatedStories(int limit = 1)
+        public static List<StoryModel> GetHighestRatedStories()
         {
-            return _storyColl.Find(Builders<StoryModel>.Filter.Empty)
-                             .Sort(Builders<StoryModel>.Sort.Descending(s => s.AverageRating))
-                             .Limit(limit)
-                             .ToList();
+            var highestRated = _storyColl.Aggregate()
+                .Match(Builders<StoryModel>.Filter.Empty)
+                .Sort(Builders<StoryModel>.Sort.Descending("averageRating"))
+                .ToList();
+
+            double highestRating = highestRated.FirstOrDefault()?.AverageRating ?? 0;
+
+            var highestRatedWithMostReviews = highestRated
+                .Where(story => story.AverageRating == highestRating)
+                .OrderByDescending(story => story.ReviewCount)
+                .ToList();
+
+            int highestReviewCount = highestRatedWithMostReviews.FirstOrDefault()?.ReviewCount ?? 0;
+
+            var topHighestRatedStories = highestRatedWithMostReviews
+                .Where(story => story.ReviewCount == highestReviewCount)
+                .ToList();
+
+            return topHighestRatedStories;
         }
 
-        public static List<StoryModel> GetMostSubscribedStories(int limit = 1)
+        public static List<StoryModel> GetMostSubscribedStories()
         {
-            return _storyColl.Find(Builders<StoryModel>.Filter.Empty)
-                             .Sort(Builders<StoryModel>.Sort.Descending(s => s.SubscribersCount))
-                             .Limit(limit)
-                             .ToList();
+            var mostSubscribed = _storyColl.Aggregate()
+                .Match(Builders<StoryModel>.Filter.Empty)
+                .Sort(Builders<StoryModel>.Sort.Descending("subscribersCount"))
+                .ToList();
+
+            int highestSubscribersCount = mostSubscribed.FirstOrDefault()?.SubscribersCount ?? 0;
+
+            var topMostSubscribedStories = mostSubscribed
+                .Where(story => story.SubscribersCount == highestSubscribersCount)
+                .ToList();
+
+            return topMostSubscribedStories;
         }
 
-        public static List<StoryModel> GetMostBookmarkedStories(int limit = 1)
+        public static List<StoryModel> GetMostBookmarkedStories()
         {
-            return _storyColl.Find(Builders<StoryModel>.Filter.Empty)
-                             .Sort(Builders<StoryModel>.Sort.Descending(s => s.BookmarksCount))
-                             .Limit(limit)
-                             .ToList();
+            var mostBookmarked = _storyColl.Aggregate()
+                .Match(Builders<StoryModel>.Filter.Empty)
+                .Sort(Builders<StoryModel>.Sort.Descending("bookmarksCount"))
+                .ToList();
+
+            int highestBookmarksCount = mostBookmarked.FirstOrDefault()?.BookmarksCount ?? 0;
+
+            var topMostBookmarkedStories = mostBookmarked
+                .Where(story => story.BookmarksCount == highestBookmarksCount)
+                .ToList();
+
+            return topMostBookmarkedStories;
+        }
+
+
+        public static List<StoryModel> PopulateAuthorInfo(List<StoryModel> stories)
+        {
+            var creatorIds = stories.Select(story => story.CreatorId).Distinct().ToList();
+            var users = _userColl.Find(user => creatorIds.Contains(user.Id)).ToList();
+            var userDictionary = users.ToDictionary(user => user.Id, user => user);
+
+            foreach (var story in stories)
+            {
+                if (userDictionary.TryGetValue(story.CreatorId, out var user))
+                {
+                    story.Author = $"{user.Name} {user.Surname}";
+                    story.AuthorAvatarUrl = user.Avatar;
+                }
+            }
+
+            return stories;
+        }
+        public static void UpdateReviewCount(ObjectId storyId)
+        {
+            var reviewCount = _reviewColl.CountDocuments(r => r.StoryId == storyId);
+            _storyColl.UpdateOne(
+                Builders<StoryModel>.Filter.Eq(s => s.Id, storyId),
+                Builders<StoryModel>.Update.Set(s => s.ReviewCount, (int)reviewCount)
+            );
         }
 
         public static void UpdateStoryRatings(ObjectId storyId)
