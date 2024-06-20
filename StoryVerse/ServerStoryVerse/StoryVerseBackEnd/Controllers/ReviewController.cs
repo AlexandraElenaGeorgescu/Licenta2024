@@ -36,7 +36,7 @@ namespace StoryVerseBackEnd.Controllers
 
             if (review != null)
             {
-                return Ok(review.getReviewApiModel(user.Name, user.Avatar)); // Pass the avatar URL
+                return Ok(review.getReviewApiModel(user.Name, user.Avatar));
             }
 
             return Ok(new ReviewModel { Rating = 0, Opinion = "" });

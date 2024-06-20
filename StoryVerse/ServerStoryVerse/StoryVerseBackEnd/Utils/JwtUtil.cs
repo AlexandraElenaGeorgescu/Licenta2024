@@ -33,7 +33,7 @@ namespace StoryVerseBackEnd.Utils
         {
             string x = userToken.Substring(7);
             JwtSecurityTokenHandler jwtsth = new JwtSecurityTokenHandler();
-            //bool y = jwtsth.CanReadToken(x);
+            bool y = jwtsth.CanReadToken(x);
             JwtSecurityToken token = new JwtSecurityTokenHandler().ReadToken(userToken.Substring(7)) as JwtSecurityToken;
             String userId = token.Claims.FirstOrDefault(claim => claim.Type == "Id").Value;
             return userId;
