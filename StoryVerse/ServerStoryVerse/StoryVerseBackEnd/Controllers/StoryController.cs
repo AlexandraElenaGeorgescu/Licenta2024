@@ -99,8 +99,12 @@ namespace StoryVerseBackEnd.Controllers
         public IActionResult Create([FromHeader(Name = "Authorization")] string token, [FromBody] StoryApiModel storyApiModel)
         {
             String userId = JwtUtil.GetUserIdFromToken(token);
+            UserModel user = MongoUtil.GetUser(new ObjectId(userId));
+
             StoryModel storyModel = storyApiModel.getStoryModel(userId, DateTime.Now);
             storyModel.Image = "StaticFiles/Images/standard.jpg";
+            storyModel.Author = $"{user.Name} {user.Surname}"; 
+            storyModel.AuthorAvatarUrl = user.Avatar;
             MongoUtil.AddStory(storyModel);
 
             return Ok("Story created");
@@ -210,6 +214,8 @@ namespace StoryVerseBackEnd.Controllers
         public IActionResult UpdateStory([FromRoute] string storyId, [FromBody] StoryApiModel storyApiModel, [FromHeader(Name = "Authorization")] string token)
         {
             string userId = JwtUtil.GetUserIdFromToken(token);
+            UserModel user = MongoUtil.GetUser(new ObjectId(userId));
+
             StoryModel existingStory = MongoUtil.GetStory(new ObjectId(storyId));
             if (existingStory == null || existingStory.CreatorId != new ObjectId(userId))
             {
@@ -218,6 +224,8 @@ namespace StoryVerseBackEnd.Controllers
 
             StoryModel updatedStory = storyApiModel.getStoryModel(userId, existingStory.DateCreated);
             updatedStory.Id = new ObjectId(storyId);
+            updatedStory.Author = $"{user.Name} {user.Surname}";
+            updatedStory.AuthorAvatarUrl = user.Avatar;
 
             MongoUtil.UpdateStory(updatedStory);
 

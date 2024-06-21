@@ -51,6 +51,7 @@ namespace StoryVerseBackEnd.Utils
                 _reviewColl.DeleteMany(r => r.StoryId == story.Id);
                 _messageColl.DeleteMany(m => m.StoryId == story.Id);
                 _storyColl.DeleteOne(s => s.Id == story.Id);
+                UpdateReviewCount(story.Id);
             }
 
             _messageColl.DeleteMany(m => m.UserId == userId);
@@ -174,11 +175,12 @@ namespace StoryVerseBackEnd.Utils
 
             try
             {
-                var filter = Builders<StoryModel>.Filter.Text(searchText);
+                var textFilter = Builders<StoryModel>.Filter.Text(searchText);
+                
                 var projection = Builders<StoryModel>.Projection.MetaTextScore("TextMatchScore");
                 var sort = Builders<StoryModel>.Sort.MetaTextScore("TextMatchScore");
 
-                var results = _storyColl.Find(filter)
+                var results = _storyColl.Find(textFilter)
                                         .Project<StoryModel>(projection)
                                         .Sort(sort)
                                         .Skip(pageId * pageSize)
@@ -193,7 +195,6 @@ namespace StoryVerseBackEnd.Utils
                                             ActualStory = story.ActualStory,
                                             Image = story.Image,
                                             Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
-                                            AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
                                         })
                                         .ToList();
 
@@ -245,7 +246,10 @@ namespace StoryVerseBackEnd.Utils
                                      ActualStory = story.ActualStory,
                                      Image = story.Image,
                                      Author = GetUser(story.CreatorId).Name + " " + GetUser(story.CreatorId).Surname,
-                                     AuthorAvatarUrl = GetUser(story.CreatorId).Avatar
+                                     AuthorAvatarUrl = GetUser(story.CreatorId).Avatar,
+                                     AverageRating = story.AverageRating,
+                                     BookmarksCount = story.BookmarksCount,
+                                     ReviewCount = story.ReviewCount,
                                  })
                                  .ToList();
             }
@@ -268,8 +272,13 @@ namespace StoryVerseBackEnd.Utils
                             .Set(e => e.Description, storyModel.Description)
                             .Set(e => e.Genre, storyModel.Genre)
                             .Set(e => e.ActualStory, storyModel.ActualStory)
-                            .Set(e => e.Image, storyModel.Image);
+                            .Set(e => e.Image, storyModel.Image)
+                            .Set(e => e.Author, GetUser(storyModel.CreatorId).Name + " " + GetUser(storyModel.CreatorId).Surname)
+                            .Set(e => e.AuthorAvatarUrl, GetUser(storyModel.CreatorId).Avatar);
 
+            UpdateStorySubscribersCount(storyModel.Id);
+            UpdateStoryRatings(storyModel.Id);
+            UpdateStoryBookmarksCount(storyModel.Id);
             _storyColl.UpdateOne(filter, update);
             NotifyUsersOnStoryUpdate(storyModel.Id);
         }
@@ -415,6 +424,7 @@ namespace StoryVerseBackEnd.Utils
         {
             _messageColl.InsertOne(messageModel);
             NotifyUsersOnNewMessage(messageModel.StoryId, messageModel.UserId, messageModel.Message);
+            NotifyAuthorOnNewMessage(messageModel.StoryId);
         }
 
         #endregion
@@ -425,6 +435,11 @@ namespace StoryVerseBackEnd.Utils
             if (story != null)
             {
                 _storyColl.DeleteOne(e => e.Id == storyId);
+                _reviewColl.DeleteMany(r => r.StoryId == storyId);
+                _messageColl.DeleteMany(m => m.StoryId == storyId);
+                _userColl.UpdateMany(u => u.RegisteredStories.Contains(storyId),
+                                       Builders<UserModel>.Update.Pull(u => u.RegisteredStories, storyId));
+                _userColl.UpdateMany(u => u.BookmarkedStories.Contains(storyId), Builders<UserModel>.Update.Pull(u => u.BookmarkedStories, storyId));
                 NotifyUsersOnStoryDeletion(storyId);
             }
         }
@@ -533,11 +548,16 @@ namespace StoryVerseBackEnd.Utils
 
             AddNotification(story.CreatorId, $"{reviewer.Name} {reviewer.Surname} deleted their review on your story: {story.Name}");
         }
+        public static void NotifyAuthorOnNewMessage(ObjectId storyId)
+        {
+            var story = GetStory(storyId);
+
+            AddNotification(story.CreatorId, $"A new message was sent on your story: {story.Name}");
+        }
 
         public static void NotifyUsersOnNewMessage(ObjectId storyId, ObjectId senderId, string message)
         {
             var story = GetStory(storyId);
-            var sender = GetUser(senderId);
             var users = _userColl.Find(u => u.BookmarkedStories.Contains(storyId) || u.RegisteredStories.Contains(storyId)).ToList();
 
             foreach (var user in users)
