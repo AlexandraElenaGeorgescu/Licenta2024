@@ -372,9 +372,7 @@ namespace StoryVerseBackEnd.Utils
 
         public static ReviewModel GetReview(ObjectId userId, ObjectId storyId)
         {
-            return _reviewColl.Find(r => r.UserId == userId && r.StoryId == storyId).FirstOrDefault();
-            UpdateReviewCount(storyId);
-        }
+            return _reviewColl.Find(r => r.UserId == userId && r.StoryId == storyId).FirstOrDefault();        }
 
         public static void EditReview(ObjectId userId, ObjectId storyId, int rating, String opinion, DateTime lastEdit)
         {
