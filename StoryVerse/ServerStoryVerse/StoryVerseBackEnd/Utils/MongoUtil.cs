@@ -373,6 +373,7 @@ namespace StoryVerseBackEnd.Utils
         public static ReviewModel GetReview(ObjectId userId, ObjectId storyId)
         {
             return _reviewColl.Find(r => r.UserId == userId && r.StoryId == storyId).FirstOrDefault();
+            UpdateReviewCount(storyId);
         }
 
         public static void EditReview(ObjectId userId, ObjectId storyId, int rating, String opinion, DateTime lastEdit)
@@ -562,7 +563,7 @@ namespace StoryVerseBackEnd.Utils
 
             foreach (var user in users)
             {
-                AddNotification(user.Id, $"New message in story {story.Name} \\: {message}");
+                AddNotification(user.Id, $"New message in story {story.Name}: {message}");
             }
         }
         public static void NotifyUsersOnStoryUpdate(ObjectId storyId)
