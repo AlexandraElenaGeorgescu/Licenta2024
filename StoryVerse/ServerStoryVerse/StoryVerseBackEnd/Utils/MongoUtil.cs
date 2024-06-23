@@ -705,14 +705,6 @@ namespace StoryVerseBackEnd.Utils
             _reviewColl = _db.GetCollection<ReviewModel>("review");
             _messageColl = _db.GetCollection<MessageModel>("message");
             _notificationColl = _db.GetCollection<NotificationModel>("notification");
-
-            var indexKeysDefinition = Builders<StoryModel>.IndexKeys
-                .Text(story => story.Name)
-                .Text(story => story.Description)
-                .Text(story => story.ActualStory);
-
-            var indexModel = new CreateIndexModel<StoryModel>(indexKeysDefinition);
-            _storyColl.Indexes.CreateOne(indexModel);
         }
 
         private static MongoClient _conn;
