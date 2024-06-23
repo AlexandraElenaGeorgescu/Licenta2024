@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using StoryVerseBackEnd.Models;
+using System.Data.SqlClient;
+using System.Globalization;
 
 namespace StoryVerseBackEnd.Utils
 {
@@ -218,7 +220,7 @@ namespace StoryVerseBackEnd.Utils
             return genres;
         }
 
-        public static List<StoryModel> GetStories(int pageSize, int pageId, string genre = "")
+        public static List<StoryModel> GetStories(int pageSize, int pageId, string genre = "", string sortBy = "")
         {
             if (pageSize <= 0)
             {
@@ -233,8 +235,66 @@ namespace StoryVerseBackEnd.Utils
             {
                 var filter = string.IsNullOrEmpty(genre) ? Builders<StoryModel>.Filter.Empty : Builders<StoryModel>.Filter.Eq(s => s.Genre, genre);
 
+                SortDefinition<StoryModel> sort;
+                if (string.IsNullOrEmpty(sortBy))
+                {
+                    sort = Builders<StoryModel>.Sort.Ascending(s => s.DateCreated);
+                }
+                else
+                {
+                    switch (sortBy.ToLower())
+                    {
+                        case "authorascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.Author);
+                            break;
+                        case "authordescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.Author);
+                            break;
+                        case "nameascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.Name);
+                            break;
+                        case "namedescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.Name);
+                            break;
+                        case "datecreatedascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.DateCreated);
+                            break;
+                        case "datecreateddescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.DateCreated);
+                            break;
+                        case "reviewcountascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.ReviewCount);
+                            break;
+                        case "reviewcountdescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.ReviewCount);
+                            break;
+                        case "bookmarkscountascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.BookmarksCount);
+                            break;
+                        case "bookmarkscountdescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.BookmarksCount);
+                            break;
+                        case "subscriberscountascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.SubscribersCount);
+                            break;
+                        case "subscriberscountdescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.SubscribersCount);
+                            break;
+                        case "averageratingascending":
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.AverageRating);
+                            break;
+                        case "averageratingdescending":
+                            sort = Builders<StoryModel>.Sort.Descending(s => s.AverageRating);
+                            break;
+                        default:
+                            sort = Builders<StoryModel>.Sort.Ascending(s => s.DateCreated); 
+                            break;
+                    }
+                }
+
                 return _storyColl.Find(filter)
                                  .Skip(pageId * pageSize)
+                                 .Sort(sort)
                                  .Limit(pageSize)
                                  .Project(story => new StoryModel
                                  {
