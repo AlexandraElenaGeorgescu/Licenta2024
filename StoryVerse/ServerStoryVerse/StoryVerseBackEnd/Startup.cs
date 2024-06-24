@@ -42,10 +42,17 @@ namespace StoryVerseBackEnd
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin",
-                    builder => builder.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
-                                      .AllowAnyMethod()
-                                      .AllowAnyHeader()
-                                      .AllowCredentials());
+                    builder => builder.SetIsOriginAllowed(origin =>
+                    {
+                        if (origin.ToLower().StartsWith("http://localhost") || origin.ToLower().StartsWith("http://127.0.0.1"))
+                        {
+                            return true;
+                        }
+                        return false;
+                    })
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
