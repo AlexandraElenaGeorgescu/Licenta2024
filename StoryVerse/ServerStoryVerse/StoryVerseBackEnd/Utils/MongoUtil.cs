@@ -453,7 +453,7 @@ namespace StoryVerseBackEnd.Utils
                 _reviewColl.InsertOne(reviewModel);
                 UpdateReviewCount(storyId);
                 NotifyAuthorOnNewReview(storyId, userId);
-                NotifyUsersOnNewReview(userId, userId);
+                NotifyUsersOnNewReview(storyId, userId);
             }
             else
             {
@@ -462,7 +462,7 @@ namespace StoryVerseBackEnd.Utils
                                                                 .Set(r => r.Opinion, opinion)
                                                                 .Set(r => r.LastEdit, lastEdit));
                 NotifyAuthorOnReviewUpdate(storyId, userId);
-                NotifyUsersOnReviewUpdate(userId, userId);
+                NotifyUsersOnReviewUpdate(storyId, userId);
                 UpdateStoryRatings(storyId);
             }
         }
@@ -472,7 +472,7 @@ namespace StoryVerseBackEnd.Utils
             _reviewColl.DeleteOne(r => r.UserId == userId && r.StoryId == storyId);
             UpdateReviewCount(storyId);
             NotifyAuthorOnReviewDeletion(storyId, userId);
-            NotifyUsersOnReviewDeleted(userId, userId);
+            NotifyUsersOnReviewDeleted(storyId, userId);
         }
 
         #endregion
